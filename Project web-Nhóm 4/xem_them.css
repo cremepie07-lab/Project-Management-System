@@ -1,0 +1,214 @@
+/* ===== Hero ===== */
+        .hero {
+            position: relative;
+            height: 420px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%);
+        }
+
+        .hero-text {
+            position: absolute;
+            bottom: 28px;
+            left: 28px;
+            color: #fff;
+        }
+
+        .hero-text h1 {
+            font-size: 32px;
+            margin-bottom: 6px;
+        }
+
+        .hero-text p {
+            font-size: 14px;
+            opacity: 0.85;
+            margin: 0;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background-color: #2e7d32;
+            color: #fff;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin-bottom: 10px;
+        }
+
+        /* ===== Thông tin nhanh ===== */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .info-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .info-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .info-card .info-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+        }
+
+        .info-card .info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .info-card .info-value.red  { color: #c62828; }
+        .info-card .info-value.blue { color: #1565c0; }
+
+        /* ===== Tags ===== */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            font-size: 13px;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+            padding: 4px 12px;
+            border-radius: 99px;
+        }
+
+        /* ===== Gallery ===== */
+        .gallery {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 6px;
+            display: block;
+        }
+
+        /* ===== Ẩm thực ===== */
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .food-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .food-icon { font-size: 26px; margin-bottom: 6px; }
+        .food-name { font-size: 13px; font-weight: bold; color: #333; }
+
+        /* ===== Lịch trình ===== */
+        .timeline {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0;
+        }
+
+        .timeline li {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+
+        .timeline-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #e8f5e9;
+            border: 2px solid #2e7d32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .timeline-content strong {
+            display: block;
+            font-size: 14px;
+            color: #2e7d32;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content span {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* ===== Note ===== */
+        .note {
+            background-color: #e3f2fd;
+            border-left: 4px solid #1565c0;
+            padding: 12px 16px;
+            border-radius: 0 6px 6px 0;
+            font-size: 13px;
+            color: #0d47a1;
+            margin-top: 15px;
+        }
+
+        /* ===== Booking ===== */
+        .booking-box {
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 6px;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .booking-box .price {
+            font-size: 26px;
+            font-weight: bold;
+            color: #c62828;
+        }
+
+        .booking-box .price span {
+            font-size: 14px;
+            color: #555;
+            font-weight: normal;
+        }
