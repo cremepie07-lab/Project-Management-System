@@ -1,0 +1,420 @@
+/* ==========================================================================
+   1. RESET & CẤU HÌNH CHUNG (Màu sắc, Font chữ)
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root {
+    --primary-blue: #004b8d;   /* Xanh dương đậm từ chữ VIET TRAVEL */
+    --accent-teal: #028090;    /* Xanh ngọc từ cung đường */
+    --mountain-green: #2e7d32; /* Xanh lá từ đỉnh núi */
+    --text-dark: #222222;      /* Màu chữ chính */
+    --bg-light: #f8f9fa;       /* Màu nền xám nhạt */
+    --white: #ffffff;
+    --transition-smooth: all 0.3s ease;
+}
+
+body {
+    color: var(--text-dark);
+    background-color: var(--bg-light);
+    line-height: 1.6;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+.container {
+    width: 85%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   2. THANH ĐIỀU HƯỚNG (HEADER & NAVIGATION) - Dùng Flexbox
+   ========================================================================== */
+header {
+    background-color: var(--white);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+}
+
+.logo-area img {
+    height: auto;
+    max-height: 55px; /* Giới hạn chiều cao tối đa giúp logo cân đối */
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+    margin-left: auto; /* Đẩy menu menu về bên phải khi bỏ nút đăng nhập */
+}
+
+.nav-links a {
+    font-weight: 600;
+    color: var(--primary-blue);
+    padding: 5px 0;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition-smooth);
+}
+
+/* Hiệu ứng hover cho menu đường gạch chân */
+.nav-links a:hover {
+    color: var(--accent-teal);
+    border-bottom: 2px solid var(--accent-teal);
+}
+
+/* ==========================================================================
+   3. BANNER CHÍNH & BỘ LỌC (HERO SECTION)
+   ========================================================================== */
+.hero {
+    /* Thay ảnh nền phong cảnh Việt Nam chất lượng cao */
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                url('https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+    height: 550px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    text-align: center;
+    position: relative;
+    padding: 0 20px;
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    max-width: 600px;
+}
+
+/* Thanh tìm kiếm dùng CSS Grid */
+.search-box {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 900px;
+    position: absolute;
+    bottom: -40px; /* Đẩy một nửa thanh tìm kiếm lồi xuống dưới */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) auto;
+    gap: 15px;
+    align-items: center;
+}
+
+.search-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.search-item label {
+    color: #666;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.search-item input, .search-item select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    outline: none;
+    color: var(--text-dark);
+}
+
+.search-box .btn-search {
+    background-color: var(--accent-teal);
+    color: var(--white);
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    height: calc(100% - 20px); /* Cân bằng chiều cao với input */
+    margin-top: 20px;
+    transition: var(--transition-smooth);
+}
+
+.search-box .btn-search:hover {
+    background-color: var(--primary-blue);
+}
+
+/* ==========================================================================
+   4. DANH MỤC KHÁM PHÁ (CATEGORIES) - Dùng Flexbox / Grid
+   ========================================================================== */
+.section-padding {
+    padding: 100px 0 60px 0;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-title h2 {
+    font-size: 2.2rem;
+    color: var(--primary-blue);
+    position: relative;
+    display: inline-block;
+    padding-bottom: 10px;
+}
+
+/* Đường gạch chân trang trí dưới tiêu đề */
+.section-title h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 4px;
+    background-color: var(--accent-teal);
+    border-radius: 2px;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.category-card {
+    background-color: var(--white);
+    padding: 30px 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    border-top: 4px solid transparent;
+    transition: var(--transition-smooth);
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+    border-top: 4px solid var(--mountain-green);
+}
+
+.category-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.category-card h3 {
+    font-size: 1.15rem;
+    color: var(--primary-blue);
+}
+
+/* ==========================================================================
+   5. DANH SÁCH TOUR NỔI BẬT (FEATURED TOURS) - Dùng CSS Grid
+   ========================================================================== */
+.tours-section {
+    padding: 40px 0 80px 0;
+}
+
+.tour-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.tour-card {
+    background-color: var(--white);
+    border-radius: 12px;
+    overflow: hidden; /* Cắt các phần thừa ra ngoài bo góc */
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    transition: var(--transition-smooth);
+    display: flex;
+    flex-direction: column;
+}
+
+.tour-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.tour-img {
+    height: 220px;
+    position: relative;
+}
+
+.tour-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tour-tag {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--mountain-green);
+    color: var(--white);
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+.tour-content {
+    padding: 20px;
+    display: flex;          
+    flex-direction: column; 
+    flex: 1;
+}
+
+.tour-info {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.tour-title {
+    font-size: 1.2rem;
+    color: var(--primary-blue);
+    margin-bottom: 12px;
+    min-height: auto;
+    overflow: visible;
+    flex-grow: 1;
+}
+
+.tour-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: auto;
+}
+
+.tour-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #e53935; /* Màu đỏ cho giá tiền nổi bật */
+}
+
+.btn-detail {
+    border: 1px solid var(--accent-teal);
+    color: var(--accent-teal);
+    padding: 7px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: var(--transition-smooth);
+}
+
+.btn-detail:hover {
+    background-color: var(--accent-teal);
+    color: var(--white);
+}
+
+/* ==========================================================================
+   6. CHÂN TRANG (FOOTER) - Dùng CSS Grid
+   ========================================================================== */
+footer {
+    background-color: #111a24; /* Nền tối sang trọng */
+    color: #b0bec5;
+    padding: 60px 0 30px 0;
+    font-size: 0.95rem;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr repeat(2, 1fr) 1.5fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-col h4 {
+    color: var(--white);
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 8px;
+}
+
+.footer-col h4::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background-color: var(--accent-teal);
+}
+
+.footer-col p {
+    margin-bottom: 12px;
+}
+
+.footer-col ul li {
+    margin-bottom: 10px;
+}
+
+.footer-col ul li a:hover {
+    color: var(--white);
+    padding-left: 5px;
+    transition: var(--transition-smooth);
+}
+
+.footer-bottom {
+    text-align: center;
+    border-top: 1px solid #263238;
+    padding-top: 20px;
+    font-size: 0.85rem;
+}
+
+/*bonus: texterea for note*/
+textarea {
+    width: 100%;       /* Chiều rộng khung */
+    height: 100px;     /* Chiều cao mặc định */
+    padding: 10px;     /* Khoảng cách bên trong */
+    border: 1px solid #008080; /* Màu viền xanh như trong ảnh */
+    border-radius: 8px; /* Bo góc khung */
+    font-family: Arial, sans-serif;
+    resize: vertical;  /* Cho phép người dùng kéo thả chiều cao */
+    box-sizing: border-box; /* Đảm bảo padding không làm vỡ khung */
+}
+
+/* Hiệu ứng khi click vào khung */
+textarea:focus {
+    outline: none;
+    border-color: #005f5f;
+    box-shadow: 0 0 5px rgba(0, 128, 128, 0.3);
+}
