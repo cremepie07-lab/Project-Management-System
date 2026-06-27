@@ -1,0 +1,28 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# testing
+coverage
+
+# production
+build
+dist
+
+# next.js
+.next
+out
+
+# misc
+.DS_Store
+*.pem
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
