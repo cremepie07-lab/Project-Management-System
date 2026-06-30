@@ -32,6 +32,12 @@ export default async function BoardPage({
             include: {
               cardLabels: { include: { label: true } },
               cardMembers: { include: { user: true } },
+              checklists: {
+                orderBy: { order: "asc" },
+                include: { items: { orderBy: { order: "asc" } } },
+              },
+              timeEntries: { select: { startedAt: true, endedAt: true } },
+              _count: { select: { activities: true } },
             },
           },
         },

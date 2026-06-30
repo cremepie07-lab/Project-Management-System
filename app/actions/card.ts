@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { logSystemActivity } from "@/app/actions/activity";
+import { formatDueDate } from "@/lib/due-date";
 
 export async function createCard(listId: string, title: string) {
   await requireSession();
@@ -14,8 +16,24 @@ export async function createCard(listId: string, title: string) {
   });
 }
 
-export async function updateCard(cardId: string, data: { title?: string; description?: string; color?: string }) {
-  await requireSession();
+export async function updateCard(
+  cardId: string,
+  data: { title?: string; description?: string; color?: string; dueDate?: Date | null }
+) {
+  const session = await requireSession();
+
+  if (data.dueDate !== undefined) {
+    const updated = await prisma.card.update({ where: { id: cardId }, data });
+    await logSystemActivity(
+      cardId,
+      session.userId,
+      data.dueDate
+        ? `đã đặt hạn hoàn thành: ${formatDueDate(data.dueDate)}`
+        : `đã xóa hạn hoàn thành`
+    );
+    return updated;
+  }
+
   return prisma.card.update({ where: { id: cardId }, data });
 }
 
@@ -25,11 +43,22 @@ export async function deleteCard(cardId: string) {
 }
 
 export async function updateCardOrder(cardId: string, newListId: string, order: number) {
-  await requireSession();
+  const session = await requireSession();
+
+  const current = await prisma.card.findUnique({ where: { id: cardId }, select: { listId: true } });
+  const movedToNewList = !!current && current.listId !== newListId;
+
   await prisma.card.update({
     where: { id: cardId },
     data: { listId: newListId, order },
   });
+
+  if (movedToNewList) {
+    const targetList = await prisma.list.findUnique({ where: { id: newListId }, select: { title: true } });
+    if (targetList) {
+      await logSystemActivity(cardId, session.userId, `đã di chuyển thẻ tới danh sách "${targetList.title}"`);
+    }
+  }
 
   const siblings = await prisma.card.findMany({
     where: { listId: newListId },
