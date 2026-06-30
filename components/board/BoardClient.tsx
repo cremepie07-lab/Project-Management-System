@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, GripVertical, Filter } from "lucide-react";
+import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock } from "lucide-react";
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCorners, DragOverlay,
@@ -16,6 +16,8 @@ import { updateListOrder, rebalanceLists, createList, deleteList, updateListTitl
 import { createCard, deleteCard, updateCardOrder } from "@/app/actions/card";
 import { calcNewPosition, needsRebalance } from "@/utils/position";
 import { useCardFilter } from "@/hooks/useCardFilter";
+import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES } from "@/lib/due-date";
+import { formatDuration, sumTrackedSeconds } from "@/lib/time-format";
 import CardModal from "@/components/board/CardModal";
 
 // ── Types ──
@@ -23,11 +25,17 @@ interface Label { id: string; name: string; color: string; }
 interface Member { id: string; name: string; avatarUrl?: string | null; }
 interface CardLabel { labelId: string; label: Label; }
 interface CardMember { userId: string; user: Member; }
+interface ChecklistItemT { id: string; title: string; isDone: boolean; order: number; }
+interface ChecklistT { id: string; title: string; order: number; items: ChecklistItemT[]; }
 interface Card {
   id: string; title: string; description?: string | null;
   order: number; color?: string | null;
+  dueDate?: string | Date | null;
   cardLabels: CardLabel[];
   cardMembers: CardMember[];
+  checklists?: ChecklistT[];
+  timeEntries?: { startedAt: string | Date; endedAt: string | Date | null }[];
+  _count?: { activities: number };
 }
 interface List { id: string; title: string; order: number; cards: Card[]; }
 
@@ -37,6 +45,12 @@ function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
     id: card.id, data: { type: "card", card },
   });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  const dueStatus = getDueDateStatus(card.dueDate);
+  const totalItems = card.checklists?.reduce((sum, cl) => sum + cl.items.length, 0) ?? 0;
+  const doneItems = card.checklists?.reduce((sum, cl) => sum + cl.items.filter((i) => i.isDone).length, 0) ?? 0;
+  const trackedSeconds = card.timeEntries ? sumTrackedSeconds(card.timeEntries) : 0;
+  const commentCount = card._count?.activities ?? 0;
+  const hasMeta = dueStatus || totalItems > 0 || trackedSeconds > 0 || commentCount > 0 || card.cardMembers.length > 0;
 
   return (
     <div
@@ -53,8 +67,30 @@ function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
       )}
       <p className="text-sm text-white leading-snug">{card.title}</p>
       {card.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{card.description}</p>}
-      {card.cardMembers.length > 0 && (
-        <div className="flex gap-1 mt-2">
+
+      {hasMeta && (
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {dueStatus && card.dueDate && (
+            <span className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md border ${DUE_DATE_STYLES[dueStatus]}`}>
+              <Calendar className="w-3 h-3" />
+              {formatDueDate(card.dueDate)}
+            </span>
+          )}
+          {totalItems > 0 && (
+            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
+              <ListChecks className="w-3 h-3" /> {doneItems}/{totalItems}
+            </span>
+          )}
+          {trackedSeconds > 0 && (
+            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
+              <Clock className="w-3 h-3" /> {formatDuration(trackedSeconds)}
+            </span>
+          )}
+          {commentCount > 0 && (
+            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
+              <MessageSquare className="w-3 h-3" /> {commentCount}
+            </span>
+          )}
           {card.cardMembers.map((cm) => (
             <div key={cm.userId} className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold" title={cm.user.name}>
               {cm.user.name[0].toUpperCase()}
