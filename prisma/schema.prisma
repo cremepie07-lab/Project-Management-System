@@ -23,6 +23,8 @@ model User {
 
   memberships     WorkspaceMember[]
   cardAssignments CardMember[]
+  activities      Activity[]
+  timeEntries     TimeEntry[]
 
   @@map("users")
 }
@@ -90,11 +92,12 @@ model List {
 }
 
 model Card {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   description String?
   order       Float                // ← Float
   color       String?
+  dueDate     DateTime?
 
   listId String
   list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -104,9 +107,79 @@ model Card {
 
   cardLabels  CardLabel[]
   cardMembers CardMember[]
+  checklists  Checklist[]
+  activities  Activity[]
+  timeEntries TimeEntry[]
 
   @@index([listId])
   @@map("cards")
+}
+
+model Checklist {
+  id    String @id @default(cuid())
+  title String
+  order Float
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  items ChecklistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cardId])
+  @@map("checklists")
+}
+
+model ChecklistItem {
+  id     String  @id @default(cuid())
+  title  String
+  isDone Boolean @default(false)
+  order  Float
+
+  checklistId String
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([checklistId])
+  @@map("checklist_items")
+}
+
+// type: "COMMENT" (bình luận của người dùng) | "SYSTEM" (tự động ghi lại thao tác)
+model Activity {
+  id      String @id @default(cuid())
+  type    String
+  message String
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
+  @@map("activities")
+}
+
+model TimeEntry {
+  id        String    @id @default(cuid())
+  startedAt DateTime
+  endedAt   DateTime?
+  note      String?
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
+  @@map("time_entries")
 }
 
 model Label {
