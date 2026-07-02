@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { logSystemActivity } from "@/app/actions/activity";
@@ -27,12 +28,30 @@ export async function createChecklist(cardId: string, title: string) {
 
 export async function renameChecklist(checklistId: string, title: string) {
   await requireSession();
-  return prisma.checklist.update({ where: { id: checklistId }, data: { title } });
+  try {
+    return await prisma.checklist.update({ where: { id: checklistId }, data: { title } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      // Checklist đã bị xóa (vd: do request khác / cascade từ card cha) -> bỏ qua
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function deleteChecklist(checklistId: string) {
   await requireSession();
-  await prisma.checklist.delete({ where: { id: checklistId } });
+  try {
+    await prisma.checklist.delete({ where: { id: checklistId } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      // Record đã bị xóa rồi (double click, hoặc cascade từ card cha bị xóa trước đó)
+      // -> coi như đã xóa thành công, không throw lỗi ra UI
+      return { success: true, alreadyDeleted: true };
+    }
+    throw error;
+  }
+  return { success: true };
 }
 
 export async function createChecklistItem(checklistId: string, title: string) {
@@ -52,7 +71,10 @@ export async function toggleChecklistItem(itemId: string) {
     where: { id: itemId },
     include: { checklist: true },
   });
-  if (!item) throw new Error("NOT_FOUND");
+  if (!item) {
+    // Item đã bị xóa (vd: checklist cha vừa bị xóa) -> không có gì để toggle
+    return null;
+  }
 
   const updated = await prisma.checklistItem.update({
     where: { id: itemId },
@@ -72,5 +94,14 @@ export async function toggleChecklistItem(itemId: string) {
 
 export async function deleteChecklistItem(itemId: string) {
   await requireSession();
-  await prisma.checklistItem.delete({ where: { id: itemId } });
+  try {
+    await prisma.checklistItem.delete({ where: { id: itemId } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      // Item đã bị xóa rồi -> bỏ qua, không throw lỗi
+      return { success: true, alreadyDeleted: true };
+    }
+    throw error;
+  }
+  return { success: true };
 }

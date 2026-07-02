@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+
 import { Inter } from "next/font/google";
+// @ts-ignore: CSS module declaration missing in this project setup
 import "./global.css";
 
 const inter = Inter({ subsets: ["latin"] });
