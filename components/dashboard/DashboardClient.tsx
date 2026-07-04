@@ -34,8 +34,8 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ name, email, avatarUrl, initialWorkspaces }: DashboardClientProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
-const [activeWsId, setActiveWsId] = useState(initialWorkspaces[0]?.id ?? "");
-const [expandedIds, setExpandedIds] = useState<string[]>(initialWorkspaces[0]?.id ? [initialWorkspaces[0].id] : []);
+  const [activeWsId, setActiveWsId] = useState(initialWorkspaces[0]?.id ?? "");
+  const [expandedIds, setExpandedIds] = useState<string[]>(initialWorkspaces[0]?.id ? [initialWorkspaces[0].id] : []);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCreateWs, setShowCreateWs] = useState(false);
   const [showCreateBoard, setShowCreateBoard] = useState(false);
@@ -57,28 +57,28 @@ const [expandedIds, setExpandedIds] = useState<string[]>(initialWorkspaces[0]?.i
   }
 
   async function handleCreateWorkspace(name: string, color: string) {
-  const ws = await createWorkspace(name); // gọi DB thật
-  setWorkspaces((prev) => [...prev, {
-    id: ws.id,       // ← ID thật từ DB
-    name: ws.name,
-    slug: ws.slug,
-    color,
-    boards: [],
-  }]);
-  setActiveWsId(ws.id);
-  setExpandedIds((prev) => [...prev, ws.id]);
-  setShowCreateWs(false);
-}
+    const ws = await createWorkspace(name); // gọi DB thật
+    setWorkspaces((prev) => [...prev, {
+      id: ws.id,       // ← ID thật từ DB
+      name: ws.name,
+      slug: ws.slug,
+      color,
+      boards: [],
+    }]);
+    setActiveWsId(ws.id);
+    setExpandedIds((prev) => [...prev, ws.id]);
+    setShowCreateWs(false);
+  }
 
   async function handleCreateBoard(title: string, color: string) {
-  const board = await createBoard(activeWsId, title, color);
-  setWorkspaces((prev) => prev.map((w) =>
-    w.id === activeWsId
-      ? { ...w, boards: [...w.boards, { id: board.id, title: board.title, color: board.imageUrl ?? color, starred: false }] }
-      : w
-  ));
-  setShowCreateBoard(false);
-}
+    const board = await createBoard(activeWsId, title, color);
+    setWorkspaces((prev) => prev.map((w) =>
+      w.id === activeWsId
+        ? { ...w, boards: [...w.boards, { id: board.id, title: board.title, color: board.imageUrl ?? color, starred: false }] }
+        : w
+    ));
+    setShowCreateBoard(false);
+  }
 
   const filteredWorkspaces = workspaces.map((w) => ({
     ...w,
@@ -135,9 +135,8 @@ const [expandedIds, setExpandedIds] = useState<string[]>(initialWorkspaces[0]?.i
             expandedIds={expandedIds}
             onSelectWs={setActiveWsId}
             onToggleExpand={toggleExpand}
-            onCreateWs={() => setShowCreateWs(true)} onLogout={function (): void {
-              throw new Error("Function not implemented.");
-            } }          />
+            onCreateWs={() => setShowCreateWs(true)}
+          />
         )}
 
         <main className="flex-1 overflow-y-auto p-6 space-y-8">
