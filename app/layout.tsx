@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Inter } from "next/font/google";
+import { Analytics } from '@vercel/analytics/next';
 // @ts-ignore: CSS module declaration missing in this project setup
 import "./global.css";
 
@@ -21,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
