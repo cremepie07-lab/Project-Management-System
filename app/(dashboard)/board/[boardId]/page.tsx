@@ -1,6 +1,8 @@
 import { getSession } from "@/lib/session";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import BoardClient from "@/components/board/BoardClient";
 
 export default async function BoardPage({
@@ -59,6 +61,12 @@ export default async function BoardPage({
       style={{ background: `linear-gradient(135deg, #1e1b4b, #312e81)` }}
     >
       <header className="h-14 bg-black/30 backdrop-blur-sm flex items-center px-4 gap-3">
+        <Link
+          href="/dashboard"
+          className="text-gray-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
         <h1 className="text-white font-bold text-lg">{board.title}</h1>
       </header>
 

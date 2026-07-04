@@ -256,6 +256,14 @@ export default function CardModal({
     onClose();
   }
 
+  // ── Xóa card: dọn dẹp Pomodoro store nếu đang gắn vào chính card này ─────
+  function handleDeleteCard() {
+    if (pomo.cardId === card.id) {
+      pomo.clear();
+    }
+    onDelete(card.id, listId);
+  }
+
   async function handleToggleLabel(labelId: string) {
     const res   = await toggleCardLabel(card.id, labelId);
     const label = boardLabels.find(l => l.id === labelId)!;
@@ -907,7 +915,7 @@ export default function CardModal({
               className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
               <Check className="w-4 h-4" /> Lưu
             </button>
-            <button onClick={() => onDelete(card.id, listId)}
+            <button onClick={handleDeleteCard}
               className="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors flex items-center gap-2">
               <Trash2 className="w-4 h-4" /> Xóa
             </button>
