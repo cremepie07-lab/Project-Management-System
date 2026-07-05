@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, Plus, Star, Clock, Search, Bell, Menu, Settings, Users } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BoardCard from "@/components/dashboard/BoardCard";
@@ -33,6 +34,7 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ name, email, avatarUrl, initialWorkspaces }: DashboardClientProps) {
+  const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWsId, setActiveWsId] = useState(initialWorkspaces[0]?.id ?? "");
   const [expandedIds, setExpandedIds] = useState<string[]>(initialWorkspaces[0]?.id ? [initialWorkspaces[0].id] : []);
@@ -191,10 +193,16 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
                   <h2 className="text-sm font-semibold text-white">{ws.name}</h2>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors">
+                  <button
+                    onClick={() => router.push(`/workspace/${ws.id}/members`)}
+                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+                  >
                     <Users className="w-3.5 h-3.5" /> Thành viên
                   </button>
-                  <button className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors">
+                  <button
+                    onClick={() => router.push(`/workspace/${ws.id}/settings`)}
+                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+                  >
                     <Settings className="w-3.5 h-3.5" /> Cài đặt
                   </button>
                 </div>
