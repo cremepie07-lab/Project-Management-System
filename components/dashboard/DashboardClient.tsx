@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, Plus, Star, Clock, Search, Bell, Menu, Settings, Users } from "lucide-react";
+import { Plus, Star, Clock, Search, Bell, Menu, Settings, Users } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BoardCard from "@/components/dashboard/BoardCard";
 import CreateWorkspaceModal from "@/components/dashboard/CreateWorkspaceModal";
@@ -118,12 +118,6 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
             <Bell className="w-4 h-4" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full" />
           </button>
-          <button
-            onClick={() => setShowCreateBoard(true)}
-            className="bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all"
-          >
-            <Plus className="w-4 h-4" /> Tạo mới
-          </button>
 
           <UserDropdown name={name} email={email} avatarUrl={avatarUrl} />
         </div>
@@ -169,9 +163,6 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
           </section>
           {workspaces.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
-              <LayoutGrid className="w-8 h-8 text-gray-600" />
-            </div>
             <h3 className="text-white font-semibold mb-2">Chưa có Workspace nào</h3>
             <p className="text-gray-500 text-sm mb-4">Tạo workspace đầu tiên để bắt đầu</p>
             <button

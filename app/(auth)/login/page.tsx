@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, Loader2, LayoutGrid } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -53,11 +53,8 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
+        {/* Logo — chỉ còn chữ, đã bỏ icon */}
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-            <LayoutGrid className="w-5 h-5 text-white" />
-          </div>
           <span className="text-xl font-bold text-white">WorkFlow</span>
         </div>
 
