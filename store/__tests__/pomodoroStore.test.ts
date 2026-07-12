@@ -34,6 +34,14 @@ describe("pomodoroStore", () => {
       expect(state.cardId).toBe("card-1");
       expect(state.cardTitle).toBe("Task 1");
     });
+
+    it("should force attach a new card even if one is already attached", () => {
+      usePomodoroStore.getState().attachCard("card-1", "Task 1");
+      usePomodoroStore.getState().forceAttachCard("card-2", "Task 2");
+      const state = usePomodoroStore.getState();
+      expect(state.cardId).toBe("card-2");
+      expect(state.cardTitle).toBe("Task 2");
+    });
   });
 
   describe("Timer Actions", () => {

@@ -42,6 +42,8 @@ interface PomodoroStore {
   // ── Actions ───────────────────────────────────────────────────────────
   /** Gắn store vào một card cụ thể (gọi khi mở CardModal). */
   attachCard: (cardId: string, cardTitle: string) => void;
+  /** Buộc gắn store vào card mới (xóa session cũ). */
+  forceAttachCard: (cardId: string, cardTitle: string) => void;
   start:      () => void;
   pause:      () => void;
   reset:      () => void;
@@ -84,6 +86,18 @@ export const usePomodoroStore = create<PomodoroStore>()(
         const { cardId: current } = get();
         if (current && current !== cardId) return;
         set({ cardId, cardTitle });
+      },
+
+      forceAttachCard(cardId, cardTitle) {
+        set({
+          cardId,
+          cardTitle,
+          running:             false,
+          phase:               "work",
+          phaseStartedAt:      null,
+          pausedRemaining:     WORK_SEC,
+          workSessionStartedAt: null,
+        });
       },
 
       start() {

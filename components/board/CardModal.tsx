@@ -837,7 +837,7 @@ export default function CardModal({
                 <div className="w-full text-center text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2">
                   ⚠️ Đang có phiên Pomodoro chạy cho thẻ khác ({pomo.cardTitle})
                   <button
-                    onClick={() => { pomo.clear(); pomo.attachCard(card.id, card.title); }}
+                    onClick={() => { pomo.forceAttachCard(card.id, card.title); }}
                     className="ml-2 underline hover:text-amber-300"
                   >
                     Dừng và dùng thẻ này
