@@ -19,6 +19,7 @@ import { useCardFilter } from "@/hooks/useCardFilter";
 import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES } from "@/lib/due-date";
 import { formatDuration, sumTrackedSeconds } from "@/lib/time-format";
 import CardModal from "@/components/board/CardModal";
+import { usePomodoroStore } from "@/store/pomodoroStore";
 
 // ── Types ──
 interface Label { id: string; name: string; color: string; }
@@ -265,6 +266,11 @@ export default function BoardClient({
       l.id === listId ? { ...l, cards: l.cards.filter((c) => c.id !== cardId) } : l
     ));
     setSelectedCard(null);
+    
+    // Nếu card bị xóa đang được track Pomodoro, thì clear luôn pomodoro session
+    if (usePomodoroStore.getState().cardId === cardId) {
+      usePomodoroStore.getState().clear();
+    }
   }
 
   function handleCardUpdate(updated: Card) {
