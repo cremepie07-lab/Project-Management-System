@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import BoardClient from "@/components/board/BoardClient";
+import DeleteBoardButton from "@/components/board/DeleteBoardButton";
 
 export default async function BoardPage({
   params,
@@ -55,6 +56,9 @@ export default async function BoardPage({
     avatarUrl: m.user.avatarUrl,
   }));
 
+  const currentMember = board.workspace.members.find((m) => m.userId === session.userId);
+  const isOwner = currentMember?.role === "OWNER";
+
   return (
     <div
       className="min-h-screen bg-cover bg-center"
@@ -68,6 +72,7 @@ export default async function BoardPage({
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-white font-bold text-lg">{board.title}</h1>
+        {isOwner && <DeleteBoardButton boardId={board.id} />}
       </header>
 
       <BoardClient

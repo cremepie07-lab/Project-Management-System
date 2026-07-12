@@ -108,3 +108,60 @@ export async function deleteWorkspaceById(workspaceId: string) {
   await prisma.workspace.delete({ where: { id: workspaceId } });
   revalidatePath("/dashboard");
 }
+
+// Rời khỏi workspace
+export async function leaveWorkspace(workspaceId: string) {
+  const session = await requireSession();
+
+  // Lấy vai trò hiện tại
+  const member = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } }
+  });
+  if (!member) return { error: "Bạn không phải thành viên của workspace này" };
+
+  if (member.role === "OWNER") {
+    // Đếm số thành viên
+    const count = await prisma.workspaceMember.count({ where: { workspaceId } });
+    if (count > 1) {
+      return { error: "Chủ sở hữu không thể rời workspace khi còn thành viên khác. Hãy chuyển quyền trước." };
+    } else {
+      return { error: "Không thể rời workspace khi bạn là thành viên duy nhất. Vui lòng chọn Xóa Workspace." };
+    }
+  }
+
+  await prisma.workspaceMember.delete({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } }
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/workspace/${workspaceId}/members`);
+  return { success: true };
+}
+
+// Chuyển quyền sở hữu (OWNER)
+export async function transferWorkspaceOwnership(workspaceId: string, targetUserId: string) {
+  const session = await requireSession();
+  await assertOwner(workspaceId, session.userId);
+
+  if (targetUserId === session.userId) return { error: "Bạn đã là chủ sở hữu rồi" };
+
+  const targetMember = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } }
+  });
+  if (!targetMember) return { error: "Người nhận quyền không phải là thành viên" };
+
+  // Thực hiện đổi quyền trong transaction
+  await prisma.$transaction([
+    prisma.workspaceMember.update({
+      where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+      data: { role: "OWNER" }
+    }),
+    prisma.workspaceMember.update({
+      where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+      data: { role: "ADMIN" } // Hạ cấp xuống ADMIN
+    })
+  ]);
+
+  revalidatePath(`/workspace/${workspaceId}/members`);
+  return { success: true };
+}

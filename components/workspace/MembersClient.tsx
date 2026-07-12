@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserPlus, Shield, User, Trash2, Loader2, Crown, Check, X } from "lucide-react";
-import { inviteMember, updateMemberRole, removeMember } from "@/app/actions/workspace-members";
+import { inviteMember, updateMemberRole, removeMember, leaveWorkspace, transferWorkspaceOwnership, deleteWorkspaceById } from "@/app/actions/workspace-members";
 
 type Role = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -68,12 +68,28 @@ export default function MembersClient({ workspace, members: init, currentUserId,
     }
   }
 
-  async function handleRoleChange(member: Member, role: "ADMIN" | "MEMBER") {
+  async function handleRoleChange(member: Member, role: Role) {
+    if (role === "OWNER") {
+      if (!confirm(`Bạn có chắc chắn muốn chuyển quyền Chủ sở hữu cho ${member.user.name}? Bạn sẽ trở thành Quản trị viên (Admin).`)) {
+        return;
+      }
+      setLoadingId(member.userId);
+      const result = await transferWorkspaceOwnership(workspace.id, member.userId);
+      setLoadingId(null);
+      if (result.error) {
+        alert(result.error);
+        return;
+      }
+      router.refresh();
+      return;
+    }
+
     setLoadingId(member.userId);
-    const result = await updateMemberRole(workspace.id, member.userId, role);
+    const result = await updateMemberRole(workspace.id, member.userId, role as "ADMIN" | "MEMBER");
     setLoadingId(null);
     if (result.error) return;
     setMembers((prev) => prev.map((m) => m.userId === member.userId ? { ...m, role } : m));
+    router.refresh();
   }
 
   async function handleRemove(member: Member) {
@@ -83,6 +99,47 @@ export default function MembersClient({ workspace, members: init, currentUserId,
     setLoadingId(null);
     if (result.error) return;
     setMembers((prev) => prev.filter((m) => m.userId !== member.userId));
+  }
+
+  async function handleLeave() {
+    // If owner, ensure ownership transferred before leaving
+    if (currentRole === "OWNER") {
+      if (members.length > 1) {
+        alert("Bạn phải chuyển quyền Chủ sở hữu cho thành viên khác trước khi rời khỏi Workspace.");
+        return;
+      }
+      // Sole owner, delete workspace directly
+      setLoadingId(currentUserId);
+      await deleteWorkspaceById(workspace.id);
+      setLoadingId(null);
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+    // Regular member leave
+    if (!confirm("Bạn có chắc chắn muốn rời khỏi Workspace này không?")) return;
+    setLoadingId(currentUserId);
+    const result = await leaveWorkspace(workspace.id);
+    setLoadingId(null);
+    if (result.error) {
+      alert(result.error);
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
+  }
+
+  async function handleDeleteWorkspace() {
+    const wsName = prompt(`Nhập đúng tên Workspace "${workspace.name}" để xác nhận xóa:`);
+    if (wsName !== workspace.name) {
+      if (wsName !== null) alert("Tên Workspace không chính xác!");
+      return;
+    }
+    setLoadingId(currentUserId);
+    await deleteWorkspaceById(workspace.id);
+    setLoadingId(null);
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -175,31 +232,62 @@ export default function MembersClient({ workspace, members: init, currentUserId,
                 {loadingId === member.userId ? (
                   <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
                 ) : (
-                  member.role !== "OWNER" && canManage && member.userId !== currentUserId && (
-                    <div className="flex items-center gap-1">
-                      {isOwner && (
-                        <select
-                          value={member.role}
-                          onChange={(e) => handleRoleChange(member, e.target.value as "ADMIN" | "MEMBER")}
-                          className="bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1 outline-none"
+                  <div className="flex items-center gap-1.5">
+                    {/* Quản lý thành viên khác */}
+                    {member.userId !== currentUserId && member.role !== "OWNER" && canManage && (
+                      <>
+                        {isOwner && (
+                          <select
+                            value={member.role}
+                            onChange={(e) => handleRoleChange(member, e.target.value as Role)}
+                            className="bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1 outline-none"
+                          >
+                            <option value="MEMBER">Member</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="OWNER">Chủ sở hữu</option>
+                          </select>
+                        )}
+                        <button
+                          onClick={() => handleRemove(member)}
+                          className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                         >
-                          <option value="ADMIN">Admin</option>
-                          <option value="MEMBER">Member</option>
-                        </select>
-                      )}
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Nút Rời Workspace cho bản thân nếu không phải Owner */}
+                    {member.userId === currentUserId && (
                       <button
-                        onClick={() => handleRemove(member)}
-                        className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                        onClick={handleLeave}
+                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        Rời Workspace
                       </button>
-                    </div>
-                  )
+                    )}
+                  </div>
                 )}
               </div>
             ))}
           </div>
         </div>
+
+        {/* Xóa Workspace nếu là thành viên duy nhất và là Owner */}
+        {isOwner && members.length === 1 && (
+          <div className="bg-gray-900 border border-red-500/20 rounded-2xl p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-red-400">Vùng nguy hiểm</h3>
+            <p className="text-xs text-gray-500">
+              Bạn là thành viên duy nhất của Workspace này. Để rời khỏi, bạn cần phải xóa Workspace. Hành động này sẽ xóa sạch tất cả các Board và Card bên trong.
+            </p>
+            <button
+              onClick={handleDeleteWorkspace}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Xóa Workspace này
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
