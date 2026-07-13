@@ -8,6 +8,17 @@ interface Card {
   order: number; color?: string | null;
   cardLabels: CardLabel[];
   cardMembers: CardMember[];
+  isCompleted?: boolean;
+  completedAt?: string | Date | null;
+  dependencies?: {
+    cardId: string;
+    dependsOnId: string;
+    dependsOn: {
+      id: string;
+      title: string;
+      list: { id: string; title: string };
+    };
+  }[];
 }
 interface List { id: string; title: string; order: number; cards: Card[]; }
 

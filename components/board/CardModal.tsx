@@ -5,7 +5,7 @@ import {
   X, Check, Trash2, Tag, Users, Plus, Pencil, Calendar,
   ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link, CheckCircle2
 } from "lucide-react";
-import { updateCard, markCardComplete, undoCardComplete } from "@/app/actions/card";
+import { updateCard } from "@/app/actions/card";
 import { toggleCardLabel, toggleCardMember, createLabel, deleteLabel, updateLabel } from "@/app/actions/label";
 import {
   getChecklists, createChecklist, deleteChecklist,
@@ -343,20 +343,7 @@ export default function CardModal({
     onDelete(card.id, listId);
   }
 
-  // ── Hoàn thành / Hủy hoàn thành ─────────────────────────────────────
-  async function handleMarkComplete() {
-    const updated = await markCardComplete(card.id);
-    setIsCompleted(true);
-    setCompletedAt(updated.completedAt);
-    onUpdate({ ...localCard, isCompleted: true, completedAt: updated.completedAt });
-  }
-
-  async function handleUndoComplete() {
-    const updated = await undoCardComplete(card.id);
-    setIsCompleted(false);
-    setCompletedAt(null);
-    onUpdate({ ...localCard, isCompleted: false, completedAt: null });
-  }
+  // ── Xóa thẻ ─────────────────────────────────────────────────────────────
 
   async function handleAddDep(blockerId: string) {
     const res = await addCardDependency(card.id, blockerId);
@@ -1279,21 +1266,6 @@ export default function CardModal({
               </div>
             </div>
           )}
-
-          {/* Nút Hoàn thành */}
-          <div>
-            {isCompleted ? (
-              <button onClick={handleUndoComplete}
-                className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm font-medium py-2.5 rounded-xl border border-emerald-500/20 transition-colors">
-                <CheckCircle2 className="w-4 h-4" /> Đã hoàn thành — Nhấn để hoàn tác
-              </button>
-            ) : (
-              <button onClick={handleMarkComplete}
-                className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-emerald-500/10 text-gray-400 hover:text-emerald-400 text-sm font-medium py-2.5 rounded-xl border border-gray-700 hover:border-emerald-500/30 transition-colors">
-                <CheckCircle2 className="w-4 h-4" /> Đánh dấu hoàn thành
-              </button>
-            )}
-          </div>
 
           {/* Nút Lưu / Xóa */}
           <div className="flex gap-2 pt-1">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2 } from "lucide-react";
+import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2, Circle } from "lucide-react";
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCorners, DragOverlay,
@@ -13,7 +13,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { updateListOrder, rebalanceLists, createList, deleteList, updateListTitle } from "@/app/actions/list";
-import { createCard, deleteCard, updateCardOrder } from "@/app/actions/card";
+import { createCard, deleteCard, updateCardOrder, markCardComplete, undoCardComplete } from "@/app/actions/card";
 import { calcNewPosition, needsRebalance } from "@/utils/position";
 import { useCardFilter } from "@/hooks/useCardFilter";
 import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES } from "@/lib/due-date";
@@ -55,7 +55,7 @@ interface Card {
 interface List { id: string; title: string; order: number; cards: Card[]; }
 
 // ── Sortable Card ──
-function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
+function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick: () => void; onToggleComplete: (e: React.MouseEvent) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id, data: { type: "card", card },
   });
@@ -92,7 +92,17 @@ function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
       )}
       <div className="flex items-start justify-between gap-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          {card.isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+          <button
+            onClick={onToggleComplete}
+            className="shrink-0 p-0.5 rounded-full hover:bg-gray-700/50 transition-colors"
+            title={card.isCompleted ? "Bỏ hoàn thành" : "Đánh dấu hoàn thành"}
+          >
+            {card.isCompleted ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Circle className="w-4 h-4 text-gray-500 hover:text-gray-400" />
+            )}
+          </button>
           <p className={`text-sm leading-snug ${card.isCompleted ? "text-gray-400 line-through" : isBlocked ? "text-gray-300" : "text-white"}`}>{card.title}</p>
         </div>
         {isBlocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />}
@@ -315,6 +325,19 @@ export default function BoardClient({
     setSelectedCard(null);
   }
 
+  async function handleToggleComplete(cardId: string, currentlyCompleted: boolean, e: React.MouseEvent) {
+    e.stopPropagation();
+    const updated = currentlyCompleted
+      ? await undoCardComplete(cardId)
+      : await markCardComplete(cardId);
+    setLists((prev) => prev.map((l) => ({
+      ...l,
+      cards: l.cards.map((c) => c.id === cardId
+        ? { ...c, isCompleted: updated.isCompleted, completedAt: updated.completedAt, completedBy: updated.completedBy }
+        : c),
+    })));
+  }
+
   function onDragStart({ active }: DragStartEvent) { setActiveId(active.id as string); }
 
   function onDragOver({ active, over }: DragOverEvent) {
@@ -391,7 +414,7 @@ export default function BoardClient({
                 <SortableContext items={list.cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                   <div className="px-2 pb-2 space-y-2 min-h-8">
                     {list.cards.map((card) => (
-                      <SortableCard key={card.id} card={card} onClick={() => setSelectedCard({ card, listId: list.id })} />
+                      <SortableCard key={card.id} card={card} onClick={() => setSelectedCard({ card, listId: list.id })} onToggleComplete={(e) => handleToggleComplete(card.id, card.isCompleted ?? false, e)} />
                     ))}
                   </div>
                 </SortableContext>
