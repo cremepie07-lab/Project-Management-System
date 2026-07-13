@@ -46,8 +46,6 @@ export default async function BoardPage({
               },
               timeEntries: { select: { startedAt: true, endedAt: true } },
               _count: { select: { activities: true } },
-              isCompleted: true,
-              completedAt: true,
               dependencies: {
                 include: {
                   dependsOn: {
