@@ -188,9 +188,12 @@ export default function ProductivityClient({ userName, data }: Props) {
 
   const stats = [
     { label: "Tập trung tuần này", value: formatMinutes(data.totalFocusMinutesThisWeek), icon: <Timer className="w-5 h-5" />, color: "text-purple-400", bg: "bg-purple-500/10" },
-    { label: "Việc hoàn thành", value: `${data.totalCompletedThisWeek}`, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-green-400", bg: "bg-green-500/10" },
+    { label: "Hoàn thành tuần", value: `${data.totalCompletedThisWeek}`, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-green-400", bg: "bg-green-500/10" },
+    { label: "Hoàn thành hôm nay", value: `${data.completedToday}`, icon: <Zap className="w-5 h-5" />, color: "text-amber-400", bg: "bg-amber-500/10" },
+    { label: "Tổng đã hoàn thành", value: `${data.totalCompletedAllTime}`, icon: <TrendingUp className="w-5 h-5" />, color: "text-blue-400", bg: "bg-blue-500/10" },
     { label: "Phiên Pomodoro", value: `${data.pomodoroSessionsThisWeek}`, icon: <Zap className="w-5 h-5" />, color: "text-amber-400", bg: "bg-amber-500/10" },
     { label: "Chuỗi tập trung", value: `${data.dailyFocusStreak} ngày`, icon: <Flame className="w-5 h-5" />, color: "text-orange-400", bg: "bg-orange-500/10" },
+    { label: "Chuỗi hoàn thành", value: `${data.completionStreak} ngày`, icon: <Target className="w-5 h-5" />, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   ];
 
   return (
@@ -209,7 +212,7 @@ export default function ProductivityClient({ userName, data }: Props) {
       <main className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {stats.map((s) => (
             <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-2">
               <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color}`}>
@@ -269,12 +272,15 @@ export default function ProductivityClient({ userName, data }: Props) {
         {/* Achievements */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Thành tích</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
-              { label: "Người mới bắt đầu", desc: "Hoàn thành việc đầu tiên", unlocked: data.totalCompletedThisWeek > 0, icon: "🌟" },
+              { label: "Người mới bắt đầu", desc: "Hoàn thành việc đầu tiên", unlocked: data.totalCompletedAllTime > 0, icon: "🌟" },
               { label: "Chiến binh Pomodoro", desc: "5 phiên Pomodoro trong tuần", unlocked: data.pomodoroSessionsThisWeek >= 5, icon: "🍅" },
               { label: "Focus Master", desc: "Tập trung 10g/tuần", unlocked: data.totalFocusMinutesThisWeek >= 600, icon: "🧠" },
-              { label: "Streak Lord", desc: "Chuỗi 3 ngày liên tiếp", unlocked: data.dailyFocusStreak >= 3, icon: "🔥" },
+              { label: "Streak Lord", desc: "Chuỗi tập trung 3 ngày", unlocked: data.dailyFocusStreak >= 3, icon: "🔥" },
+              { label: "Người hoàn thành", desc: "10 việc đã hoàn thành", unlocked: data.totalCompletedAllTime >= 10, icon: "✅" },
+              { label: "Completion Streak", desc: "Chuỗi hoàn thành 3 ngày", unlocked: data.completionStreak >= 3, icon: "🏆" },
+              { label: "Overachiever", desc: "5 việc hoàn thành trong 1 ngày", unlocked: data.completedTasksPerDay.some(c => c.count >= 5), icon: "💎" },
             ].map((a) => (
               <div key={a.label} className={`rounded-xl p-3 border transition-colors ${a.unlocked ? "bg-purple-500/10 border-purple-500/30" : "bg-gray-800/50 border-gray-800 opacity-50"}`}>
                 <span className="text-2xl">{a.icon}</span>

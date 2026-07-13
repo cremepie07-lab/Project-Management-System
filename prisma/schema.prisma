@@ -25,6 +25,7 @@ model User {
   cardAssignments CardMember[]
   activities      Activity[]
   timeEntries     TimeEntry[]
+  completedCards  Card[]       @relation("CompletedBy")
 
   @@map("users")
 }
@@ -116,6 +117,12 @@ model Card {
   isRecurring        Boolean   @default(false)
   recurrenceInterval String?   // "DAILY", "WEEKLY", "MONTHLY"
   nextRecurrence     DateTime?
+
+  // Completion
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+  completedBy  String?
+  completedByUser User?   @relation("CompletedBy", fields: [completedBy], references: [id], onDelete: SetNull)
 
   // Dependencies
   dependencies       CardDependency[] @relation("BlockedCard")

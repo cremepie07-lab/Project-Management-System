@@ -26,6 +26,9 @@ export async function updateCard(
     isRecurring?: boolean;
     recurrenceInterval?: string | null;
     nextRecurrence?: Date | null;
+    isCompleted?: boolean;
+    completedAt?: Date | null;
+    completedBy?: string | null;
   }
 ) {
   const session = await requireSession();
@@ -85,4 +88,38 @@ export async function updateCardOrder(cardId: string, newListId: string, order: 
       )
     );
   }
+}
+
+export async function markCardComplete(cardId: string) {
+  const session = await requireSession();
+
+  const updated = await prisma.card.update({
+    where: { id: cardId },
+    data: {
+      isCompleted: true,
+      completedAt: new Date(),
+      completedBy: session.userId,
+    },
+  });
+
+  await logSystemActivity(cardId, session.userId, "đã đánh dấu hoàn thành");
+
+  return updated;
+}
+
+export async function undoCardComplete(cardId: string) {
+  const session = await requireSession();
+
+  const updated = await prisma.card.update({
+    where: { id: cardId },
+    data: {
+      isCompleted: false,
+      completedAt: null,
+      completedBy: null,
+    },
+  });
+
+  await logSystemActivity(cardId, session.userId, "đã hủy đánh dấu hoàn thành");
+
+  return updated;
 }

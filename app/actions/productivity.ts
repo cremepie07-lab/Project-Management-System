@@ -9,12 +9,13 @@ export interface ProductivityData {
   timeDistribution: { boardTitle: string; minutes: number }[];
   totalFocusMinutesThisWeek: number;
   totalCompletedThisWeek: number;
+  completedToday: number;
+  totalCompletedAllTime: number;
+  completionStreak: number;
   pomodoroSessionsThisWeek: number;
   dailyFocusStreak: number;
   weeklyGoalHours: number;
 }
-
-const DONE_KEYWORDS = ["done", "hoàn thành", "thành công"];
 
 export async function getProductivityData(): Promise<ProductivityData> {
   const session = await requireSession();
@@ -31,6 +32,10 @@ export async function getProductivityData(): Promise<ProductivityData> {
   const weekStart = new Date(now);
   weekStart.setDate(weekStart.getDate() - mondayOffset);
   weekStart.setHours(0, 0, 0, 0);
+
+  // Today start
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
 
   // 1. Fetch completed time entries in last 7 days
   const timeEntries = await prisma.timeEntry.findMany({
@@ -86,33 +91,37 @@ export async function getProductivityData(): Promise<ProductivityData> {
     return { date: key, minutes: Math.round(focusMap[key] ?? 0) };
   });
 
-  // 2. Fetch completed tasks (cards in "done" lists assigned to user, completed this week)
-  const userCards = await prisma.card.findMany({
+  // 2. Fetch completed tasks using isCompleted + completedAt
+  const completedCards = await prisma.card.findMany({
     where: {
-      cardMembers: { some: { userId: session.userId } },
-      list: {
-        board: { workspace: { members: { some: { userId: session.userId } } } },
-      },
+      isCompleted: true,
+      completedBy: session.userId,
+      completedAt: { not: null },
     },
-    include: { list: true },
+    select: {
+      completedAt: true,
+    },
   });
 
   const completedTasksPerDay: Record<string, number> = {};
   let totalCompletedThisWeek = 0;
+  let completedToday = 0;
+  let totalCompletedAllTime = completedCards.length;
 
-  for (const card of userCards) {
-    const listTitle = card.list.title.toLowerCase();
-    const isDone = DONE_KEYWORDS.some(kw => listTitle.includes(kw));
-    if (!isDone) continue;
+  for (const card of completedCards) {
+    const completedDate = new Date(card.completedAt!);
 
-    // Use card.updatedAt as proxy for completion date
-    const updatedAt = new Date(card.updatedAt);
-    if (updatedAt >= sevenDaysAgo) {
-      const key = updatedAt.toISOString().split("T")[0];
+    if (completedDate >= sevenDaysAgo) {
+      const key = completedDate.toISOString().split("T")[0];
       completedTasksPerDay[key] = (completedTasksPerDay[key] ?? 0) + 1;
-      if (updatedAt >= weekStart) {
-        totalCompletedThisWeek++;
-      }
+    }
+
+    if (completedDate >= weekStart) {
+      totalCompletedThisWeek++;
+    }
+
+    if (completedDate >= todayStart) {
+      completedToday++;
     }
   }
 
@@ -143,12 +152,28 @@ export async function getProductivityData(): Promise<ProductivityData> {
     }
   }
 
+  // 5. Completion streak (consecutive days with at least 1 completed task)
+  let completionStreak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    if ((completedTasksPerDay[key] ?? 0) >= 1) {
+      completionStreak++;
+    } else {
+      break;
+    }
+  }
+
   return {
     focusMinutesLast7Days,
     completedTasksPerDay: completedTasksLast7Days,
     timeDistribution,
     totalFocusMinutesThisWeek: Math.round(totalFocusMinutesThisWeek),
     totalCompletedThisWeek,
+    completedToday,
+    totalCompletedAllTime,
+    completionStreak,
     pomodoroSessionsThisWeek,
     dailyFocusStreak,
     weeklyGoalHours: 10,

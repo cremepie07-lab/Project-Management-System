@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import {
   X, Check, Trash2, Tag, Users, Plus, Pencil, Calendar,
-  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link
+  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link, CheckCircle2
 } from "lucide-react";
-import { updateCard } from "@/app/actions/card";
+import { updateCard, markCardComplete, undoCardComplete } from "@/app/actions/card";
 import { toggleCardLabel, toggleCardMember, createLabel, deleteLabel, updateLabel } from "@/app/actions/label";
 import {
   getChecklists, createChecklist, deleteChecklist,
@@ -105,6 +105,9 @@ interface Card {
   recurrenceInterval?: string | null;
   nextRecurrence?: string | Date | null;
   dependencies?: CardDependencyT[];
+  isCompleted?: boolean;
+  completedAt?: string | Date | null;
+  completedBy?: string | null;
 }
 
 interface Props {
@@ -176,6 +179,11 @@ export default function CardModal({
   const [slashIndex, setSlashIndex] = useState(0);
   const descRef = useRef<HTMLTextAreaElement>(null);
   const commentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Completion state
+  const [isCompleted, setIsCompleted] = useState(card.isCompleted ?? false);
+  const [completedAt, setCompletedAt] = useState<string | Date | null>(card.completedAt ?? null);
+  const [completedByName, setCompletedByName] = useState<string | null>(null);
 
   // Checklist
   const [checklists, setChecklists] = useState<ChecklistT[]>(card.checklists ?? []);
@@ -333,6 +341,21 @@ export default function CardModal({
       pomo.clear();
     }
     onDelete(card.id, listId);
+  }
+
+  // ── Hoàn thành / Hủy hoàn thành ─────────────────────────────────────
+  async function handleMarkComplete() {
+    const updated = await markCardComplete(card.id);
+    setIsCompleted(true);
+    setCompletedAt(updated.completedAt);
+    onUpdate({ ...localCard, isCompleted: true, completedAt: updated.completedAt });
+  }
+
+  async function handleUndoComplete() {
+    const updated = await undoCardComplete(card.id);
+    setIsCompleted(false);
+    setCompletedAt(null);
+    onUpdate({ ...localCard, isCompleted: false, completedAt: null });
   }
 
   async function handleAddDep(blockerId: string) {
@@ -610,9 +633,15 @@ export default function CardModal({
 
         <div className="p-4 space-y-4">
 
-          {/* Labels + due date + checklist badge */}
-          {(localCard.cardLabels.length > 0 || dueStatus || totalItems > 0) && (
+          {/* Labels + due date + checklist badge + completed */}
+          {(localCard.cardLabels.length > 0 || dueStatus || totalItems > 0 || isCompleted) && (
             <div className="flex flex-wrap items-center gap-1.5">
+              {isCompleted && (
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Hoàn thành{completedAt && ` ${fmtDate(completedAt)}`}
+                </span>
+              )}
               {localCard.cardLabels.map(cl => (
                 <span key={cl.labelId} className="text-xs px-2 py-0.5 rounded-full font-medium text-white"
                   style={{ backgroundColor: cl.label.color }}>
@@ -1250,6 +1279,21 @@ export default function CardModal({
               </div>
             </div>
           )}
+
+          {/* Nút Hoàn thành */}
+          <div>
+            {isCompleted ? (
+              <button onClick={handleUndoComplete}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm font-medium py-2.5 rounded-xl border border-emerald-500/20 transition-colors">
+                <CheckCircle2 className="w-4 h-4" /> Đã hoàn thành — Nhấn để hoàn tác
+              </button>
+            ) : (
+              <button onClick={handleMarkComplete}
+                className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-emerald-500/10 text-gray-400 hover:text-emerald-400 text-sm font-medium py-2.5 rounded-xl border border-gray-700 hover:border-emerald-500/30 transition-colors">
+                <CheckCircle2 className="w-4 h-4" /> Đánh dấu hoàn thành
+              </button>
+            )}
+          </div>
 
           {/* Nút Lưu / Xóa */}
           <div className="flex gap-2 pt-1">

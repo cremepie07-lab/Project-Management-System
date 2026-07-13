@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock } from "lucide-react";
+import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2 } from "lucide-react";
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCorners, DragOverlay,
@@ -37,6 +37,8 @@ interface Card {
   checklists?: ChecklistT[];
   timeEntries?: { startedAt: string | Date; endedAt: string | Date | null }[];
   _count?: { activities: number };
+  isCompleted?: boolean;
+  completedAt?: string | Date | null;
   dependencies?: {
     cardId: string;
     dependsOnId: string;
@@ -73,13 +75,13 @@ function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
   }).length ?? 0;
   const isBlocked = blockerCount > 0;
 
-  const hasMeta = dueStatus || totalItems > 0 || trackedSeconds > 0 || commentCount > 0 || card.cardMembers.length > 0 || isBlocked;
+  const hasMeta = dueStatus || totalItems > 0 || trackedSeconds > 0 || commentCount > 0 || card.cardMembers.length > 0 || isBlocked || card.isCompleted;
 
   return (
     <div
       ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={onClick}
-      className={`bg-gray-800 border rounded-xl px-3 py-2.5 cursor-pointer transition-all ${isBlocked ? "border-amber-500/50 hover:border-amber-500 bg-gray-800/90" : "border-gray-700 hover:border-gray-600"}`}
+      className={`bg-gray-800 border rounded-xl px-3 py-2.5 cursor-pointer transition-all ${card.isCompleted ? "border-emerald-500/30 opacity-70" : isBlocked ? "border-amber-500/50 hover:border-amber-500 bg-gray-800/90" : "border-gray-700 hover:border-gray-600"}`}
     >
       {card.cardLabels.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
@@ -89,7 +91,10 @@ function SortableCard({ card, onClick }: { card: Card; onClick: () => void }) {
         </div>
       )}
       <div className="flex items-start justify-between gap-1.5">
-        <p className={`text-sm leading-snug ${isBlocked ? "text-gray-300" : "text-white"}`}>{card.title}</p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {card.isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+          <p className={`text-sm leading-snug ${card.isCompleted ? "text-gray-400 line-through" : isBlocked ? "text-gray-300" : "text-white"}`}>{card.title}</p>
+        </div>
         {isBlocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />}
       </div>
       {card.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{card.description}</p>}
