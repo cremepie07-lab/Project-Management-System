@@ -3,24 +3,18 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Flame, Target, Timer, CheckCircle2, Zap, TrendingUp } from "lucide-react";
 import type { ProductivityData } from "@/app/actions/productivity";
+import { getDayLabel, formatDateShort } from "@/lib/date-utils";
 
 interface Props {
   userName: string;
   data: ProductivityData;
 }
 
-const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
 function formatMinutes(m: number) {
   if (m < 60) return `${m}p`;
   const h = Math.floor(m / 60);
   const min = m % 60;
   return min > 0 ? `${h}g ${min}p` : `${h}g`;
-}
-
-function formatDateShort(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
 // ─── SVG Line/Area Chart ─────────────────────────────────────────────────────
@@ -69,7 +63,7 @@ function FocusLineChart({ data }: { data: { date: string; minutes: number }[] })
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="4" fill="#1f1f2e" stroke="#a855f7" strokeWidth="2" />
           {/* Day label */}
-          <text x={p.x} y={h - 8} textAnchor="middle" fill="#6b7280" fontSize="9">{DAY_LABELS[i]}</text>
+          <text x={p.x} y={h - 8} textAnchor="middle" fill="#6b7280" fontSize="9">{getDayLabel(p.date)}</text>
           {/* Date label */}
           <text x={p.x} y={h - 0} textAnchor="middle" fill="#4b5563" fontSize="7">{formatDateShort(p.date)}</text>
           {/* Value tooltip */}
@@ -115,7 +109,7 @@ function CompletedBarChart({ data }: { data: { date: string; count: number }[] }
             {d.count > 0 && (
               <text x={x + barW / 2} y={y - 6} textAnchor="middle" fill="#4ade80" fontSize="9" fontWeight="600">{d.count}</text>
             )}
-            <text x={x + barW / 2} y={h - 8} textAnchor="middle" fill="#6b7280" fontSize="9">{DAY_LABELS[i]}</text>
+            <text x={x + barW / 2} y={h - 8} textAnchor="middle" fill="#6b7280" fontSize="9">{getDayLabel(d.date)}</text>
             <text x={x + barW / 2} y={h - 0} textAnchor="middle" fill="#4b5563" fontSize="7">{formatDateShort(d.date)}</text>
           </g>
         );
