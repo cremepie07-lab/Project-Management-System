@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutGrid, Home, Clock, Star, ChevronDown, Users, Settings, LogOut, Plus, Loader2 } from "lucide-react";
+import { LayoutGrid, Home, Clock, Star, ChevronDown, Users, Settings, LogOut, Plus, Loader2, TrendingUp } from "lucide-react";
 
 interface Workspace {
   id: string;
@@ -42,6 +42,7 @@ export default function Sidebar({
           { key: "home", icon: <Home className="w-4 h-4" />, label: "Trang chủ", href: "/dashboard" },
           { key: "recent", icon: <Clock className="w-4 h-4" />, label: "Đã xem gần đây", href: "/dashboard" },
           { key: "starred", icon: <Star className="w-4 h-4" />, label: "Đã gắn sao", href: "/dashboard" },
+          { key: "productivity", icon: <TrendingUp className="w-4 h-4" />, label: "Trợ lý Năng suất", href: "/dashboard/productivity" },
         ].map((item) => (
           <button
             key={item.key}

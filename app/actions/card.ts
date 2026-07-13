@@ -18,7 +18,15 @@ export async function createCard(listId: string, title: string) {
 
 export async function updateCard(
   cardId: string,
-  data: { title?: string; description?: string; color?: string; dueDate?: Date | null }
+  data: {
+    title?: string;
+    description?: string;
+    color?: string;
+    dueDate?: Date | null;
+    isRecurring?: boolean;
+    recurrenceInterval?: string | null;
+    nextRecurrence?: Date | null;
+  }
 ) {
   const session = await requireSession();
 

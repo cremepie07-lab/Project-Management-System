@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import BoardClient from "@/components/board/BoardClient";
 import DeleteBoardButton from "@/components/board/DeleteBoardButton";
 
+import { processRecurringCards } from "@/app/actions/recurring";
+
 export default async function BoardPage({
   params,
 }: {
@@ -13,6 +15,9 @@ export default async function BoardPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // Xử lý các thẻ lặp lại định kỳ
+  await processRecurringCards();
 
   const { boardId } = await params;
 
@@ -41,6 +46,15 @@ export default async function BoardPage({
               },
               timeEntries: { select: { startedAt: true, endedAt: true } },
               _count: { select: { activities: true } },
+              dependencies: {
+                include: {
+                  dependsOn: {
+                    include: {
+                      list: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },

@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 
+import { processRecurringCards } from "@/app/actions/recurring";
+
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // Xử lý các thẻ lặp lại định kỳ
+  await processRecurringCards();
 
   // Lấy workspace + board thật từ DB
   const workspaces = await prisma.workspace.findMany({

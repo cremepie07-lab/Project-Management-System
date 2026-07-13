@@ -111,8 +111,30 @@ model Card {
   activities  Activity[]
   timeEntries TimeEntry[]
   totalTimeSpent Int @default(0) @map("total_time_spent")
+
+  // Recurrence
+  isRecurring        Boolean   @default(false)
+  recurrenceInterval String?   // "DAILY", "WEEKLY", "MONTHLY"
+  nextRecurrence     DateTime?
+
+  // Dependencies
+  dependencies       CardDependency[] @relation("BlockedCard")
+  blockedCards       CardDependency[] @relation("BlockerCard")
+
   @@index([listId])
   @@map("cards")
+}
+
+model CardDependency {
+  id          String   @id @default(cuid())
+  cardId      String
+  card        Card     @relation("BlockedCard", fields: [cardId], references: [id], onDelete: Cascade)
+  dependsOnId String
+  dependsOn   Card     @relation("BlockerCard", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([cardId, dependsOnId])
+  @@map("card_dependencies")
 }
 
 model Checklist {

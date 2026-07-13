@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import {
   X, Check, Trash2, Tag, Users, Plus, Pencil, Calendar,
-  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw,
+  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link
 } from "lucide-react";
 import { updateCard } from "@/app/actions/card";
 import { toggleCardLabel, toggleCardMember, createLabel, deleteLabel, updateLabel } from "@/app/actions/label";
@@ -18,6 +18,7 @@ import {
 } from "@/app/actions/time-tracking";
 import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES, toDateInputValue } from "@/lib/due-date";
 import { usePomodoroStore, WORK_SEC, BREAK_SEC } from "@/store/pomodoroStore";
+import { addCardDependency, removeCardDependency, getBlockerCandidates } from "@/app/actions/dependency";
 
 // ─── inline time helpers ─────────────────────────────────────────────────────
 
@@ -79,6 +80,19 @@ interface TimeEntryT {
   note?: string | null; user: Member;
 }
 
+interface CardDependencyT {
+  cardId: string;
+  dependsOnId: string;
+  dependsOn: {
+    id: string;
+    title: string;
+    list: {
+      id: string;
+      title: string;
+    };
+  };
+}
+
 interface Card {
   id: string; title: string; description?: string | null;
   order: number; color?: string | null;
@@ -87,6 +101,10 @@ interface Card {
   cardLabels: CardLabel[];
   cardMembers: CardMember[];
   checklists?: ChecklistT[];
+  isRecurring?: boolean;
+  recurrenceInterval?: string | null;
+  nextRecurrence?: string | Date | null;
+  dependencies?: CardDependencyT[];
 }
 
 interface Props {
@@ -106,7 +124,23 @@ const PRESET_COLORS = [
   "#3b82f6","#8b5cf6","#ec4899","#14b8a6",
 ];
 
-type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro";
+type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies";
+
+// ─── Slash Commands ──────────────────────────────────────────────────────────
+
+interface SlashCommand {
+  name: string;
+  description: string;
+  icon: string;
+  action: () => void;
+}
+
+const SLASH_COMMANDS_DEF = [
+  { name: "todo",   description: "Thêm việc cần làm (checkbox)", icon: "☑️" },
+  { name: "date",   description: "Đặt hạn hoàn thành",         icon: "📅" },
+  { name: "label",  description: "Chọn nhãn",                   icon: "🏷️" },
+  { name: "assign", description: "Phân công thành viên",        icon: "👤" },
+];
 
 // ─── component ───────────────────────────────────────────────────────────────
 
@@ -124,6 +158,24 @@ export default function CardModal({
   const [editingLabel, setEditingLabel] = useState<Label | null>(null);
   const [dueDateInput, setDueDateInput] = useState(toDateInputValue(card.dueDate));
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Recurrence states
+  const [isRecur, setIsRecur] = useState(card.isRecurring ?? false);
+  const [recurInterval, setRecurInterval] = useState(card.recurrenceInterval ?? "DAILY");
+  const [nextRecurInput, setNextRecurInput] = useState(toDateInputValue(card.nextRecurrence));
+
+  // Dependency states
+  const [dependencies, setDependencies] = useState<CardDependencyT[]>(card.dependencies ?? []);
+  const [blockerCandidates, setBlockerCandidates] = useState<any[]>([]);
+  const [depSearch, setDepSearch] = useState("");
+
+  // Slash command states
+  const [slashVisible, setSlashVisible] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashSource, setSlashSource] = useState<"desc" | "comment">("desc");
+  const [slashIndex, setSlashIndex] = useState(0);
+  const descRef = useRef<HTMLTextAreaElement>(null);
+  const commentRef = useRef<HTMLTextAreaElement>(null);
 
   // Checklist
   const [checklists, setChecklists] = useState<ChecklistT[]>(card.checklists ?? []);
@@ -184,6 +236,11 @@ export default function CardModal({
           runningStartRef.current = new Date(running.startedAt);
           setElapsed(elapsedSec(new Date(running.startedAt)));
         }
+      });
+    }
+    if (tab === "dependencies" && blockerCandidates.length === 0) {
+      getBlockerCandidates(boardId, card.id).then(data => {
+        setBlockerCandidates(data);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -251,8 +308,22 @@ export default function CardModal({
   // ─── Handlers: card ───────────────────────────────────────────────────────
 
   async function handleSave() {
-    await updateCard(card.id, { title, description: desc });
-    onUpdate({ ...localCard, title, description: desc });
+    const nextRecurDate = nextRecurInput ? new Date(nextRecurInput) : null;
+    await updateCard(card.id, {
+      title,
+      description: desc,
+      isRecurring: isRecur,
+      recurrenceInterval: recurInterval,
+      nextRecurrence: nextRecurDate,
+    });
+    onUpdate({
+      ...localCard,
+      title,
+      description: desc,
+      isRecurring: isRecur,
+      recurrenceInterval: recurInterval,
+      nextRecurrence: nextRecurDate,
+    });
     onClose();
   }
 
@@ -262,6 +333,32 @@ export default function CardModal({
       pomo.clear();
     }
     onDelete(card.id, listId);
+  }
+
+  async function handleAddDep(blockerId: string) {
+    const res = await addCardDependency(card.id, blockerId);
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
+    if (res.success && res.dependency) {
+      const newDeps = [...dependencies, res.dependency as any];
+      setDependencies(newDeps);
+      const updatedCard = { ...localCard, dependencies: newDeps };
+      setLocalCard(updatedCard);
+      onUpdate(updatedCard);
+    }
+  }
+
+  async function handleRemoveDep(blockerId: string) {
+    const res = await removeCardDependency(card.id, blockerId);
+    if (res.success) {
+      const updatedDeps = dependencies.filter(d => d.dependsOnId !== blockerId);
+      setDependencies(updatedDeps);
+      const updatedCard = { ...localCard, dependencies: updatedDeps };
+      setLocalCard(updatedCard);
+      onUpdate(updatedCard);
+    }
   }
 
   async function handleToggleLabel(labelId: string) {
@@ -370,6 +467,84 @@ export default function CardModal({
   async function handleDeleteComment(activityId: string) {
     await deleteComment(activityId);
     setActivities(prev => prev.filter(a => a.id !== activityId));
+  }
+
+  // ─── Slash command handlers ──────────────────────────────────────────────
+
+  const filteredSlashCmds = SLASH_COMMANDS_DEF.filter(cmd =>
+    cmd.name.toLowerCase().includes(slashQuery.toLowerCase())
+  );
+
+  function handleSlashInput(e: React.ChangeEvent<HTMLTextAreaElement>, source: "desc" | "comment") {
+    const value = e.target.value;
+    const cursor = e.target.selectionStart;
+
+    if (source === "desc") setDesc(value);
+    else setNewComment(value);
+
+    const textBeforeCursor = value.slice(0, cursor);
+    const lastSlash = textBeforeCursor.lastIndexOf("/");
+
+    if (lastSlash >= 0 && (lastSlash === 0 || textBeforeCursor[lastSlash - 1] === " " || textBeforeCursor[lastSlash - 1] === "\n")) {
+      const query = textBeforeCursor.slice(lastSlash + 1);
+      if (!query.includes(" ") && query.length <= 20) {
+        setSlashVisible(true);
+        setSlashQuery(query);
+        setSlashSource(source);
+        setSlashIndex(0);
+        return;
+      }
+    }
+    setSlashVisible(false);
+  }
+
+  function executeSlashCommand(cmdName: string) {
+    const textarea = slashSource === "desc" ? descRef.current : commentRef.current;
+    if (!textarea) return;
+    const value = textarea.value;
+    const cursor = textarea.selectionStart;
+    const textBefore = value.slice(0, cursor);
+    const lastSlash = textBefore.lastIndexOf("/");
+    const textAfter = value.slice(cursor);
+
+    if (cmdName === "todo") {
+      const before = value.slice(0, lastSlash);
+      const newVal = before + "- [ ] " + textAfter;
+      if (slashSource === "desc") setDesc(newVal);
+      else setNewComment(newVal);
+    } else if (cmdName === "date") {
+      const before = value.slice(0, lastSlash);
+      if (slashSource === "desc") setDesc(before + textAfter);
+      else setNewComment(before + textAfter);
+      setTab("due");
+    } else if (cmdName === "label") {
+      const before = value.slice(0, lastSlash);
+      if (slashSource === "desc") setDesc(before + textAfter);
+      else setNewComment(before + textAfter);
+      setTab("labels");
+    } else if (cmdName === "assign") {
+      const before = value.slice(0, lastSlash);
+      if (slashSource === "desc") setDesc(before + textAfter);
+      else setNewComment(before + textAfter);
+      setTab("members");
+    }
+    setSlashVisible(false);
+  }
+
+  function handleSlashKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (!slashVisible) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSlashIndex(i => Math.min(i + 1, filteredSlashCmds.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSlashIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && filteredSlashCmds.length > 0) {
+      e.preventDefault();
+      executeSlashCommand(filteredSlashCmds[slashIndex].name);
+    } else if (e.key === "Escape") {
+      setSlashVisible(false);
+    }
   }
 
   // ─── Handlers: time tracking ─────────────────────────────────────────────
@@ -482,23 +657,46 @@ export default function CardModal({
           </div>
 
           {/* Mô tả */}
-          <div>
+          <div className="relative">
             <label className="text-xs text-gray-400 font-medium mb-1.5 block">Mô tả</label>
-            <textarea rows={3} value={desc} onChange={e => setDesc(e.target.value)} placeholder="Thêm mô tả..."
+            <textarea ref={descRef} rows={3} value={desc}
+              onChange={(e) => handleSlashInput(e, "desc")}
+              onKeyDown={(e) => handleSlashKeyDown(e)}
+              placeholder="Thêm mô tả... (gõ / để mở lệnh nhanh)"
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors resize-none"
             />
+            {slashVisible && slashSource === "desc" && (
+              <div className="absolute left-0 top-full mt-1 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl py-1 w-64">
+                {filteredSlashCmds.length === 0 ? (
+                  <p className="text-xs text-gray-500 px-3 py-2">Không có lệnh nào khớp</p>
+                ) : (
+                  filteredSlashCmds.map((cmd, i) => (
+                    <button key={cmd.name} onClick={() => executeSlashCommand(cmd.name)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-purple-600/20 text-purple-300" : "text-gray-300 hover:bg-gray-700"}`}>
+                      <span className="text-base">{cmd.icon}</span>
+                      <div>
+                        <span className="font-medium">/{cmd.name}</span>
+                        <span className="text-gray-500 ml-1.5">{cmd.description}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* Tab buttons */}
           <div className="flex flex-wrap gap-2">
             {([
-              { key: "labels",    icon: <Tag className="w-3.5 h-3.5" />,           label: "Nhãn" },
-              { key: "members",   icon: <Users className="w-3.5 h-3.5" />,         label: "Thành viên" },
-              { key: "due",       icon: <Calendar className="w-3.5 h-3.5" />,      label: "Hạn hoàn thành" },
-              { key: "checklist", icon: <ListChecks className="w-3.5 h-3.5" />,    label: "Checklist" },
-              { key: "comments",  icon: <MessageSquare className="w-3.5 h-3.5" />, label: "Bình luận" },
-              { key: "time",      icon: <Clock className="w-3.5 h-3.5" />,         label: "Thời gian" },
-              { key: "pomodoro",  icon: <Timer className="w-3.5 h-3.5" />,         label: "Pomodoro" },
+              { key: "labels",       icon: <Tag className="w-3.5 h-3.5" />,           label: "Nhãn" },
+              { key: "members",      icon: <Users className="w-3.5 h-3.5" />,         label: "Thành viên" },
+              { key: "due",          icon: <Calendar className="w-3.5 h-3.5" />,      label: "Hạn" },
+              { key: "checklist",    icon: <ListChecks className="w-3.5 h-3.5" />,    label: "Checklist" },
+              { key: "comments",     icon: <MessageSquare className="w-3.5 h-3.5" />, label: "Bình luận" },
+              { key: "time",         icon: <Clock className="w-3.5 h-3.5" />,         label: "Thời gian" },
+              { key: "pomodoro",     icon: <Timer className="w-3.5 h-3.5" />,         label: "Pomodoro" },
+              { key: "recurring",    icon: <Repeat className="w-3.5 h-3.5" />,        label: "Lặp lại" },
+              { key: "dependencies", icon: <Link className="w-3.5 h-3.5" />,          label: "Liên kết" },
             ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
               <button key={t.key} onClick={() => setTab(tab === t.key ? null : t.key)}
                 className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors ${
@@ -712,12 +910,31 @@ export default function CardModal({
             <div className="bg-gray-800 rounded-xl p-3 space-y-3">
               <div className="flex items-start gap-2">
                 <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0">M</div>
-                <div className="flex-1 space-y-1.5">
-                  <textarea rows={2} value={newComment} onChange={e => setNewComment(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
-                    placeholder="Viết bình luận... (Enter để gửi)"
+                <div className="flex-1 space-y-1.5 relative">
+                  <textarea ref={commentRef} rows={2} value={newComment}
+                    onChange={(e) => handleSlashInput(e, "comment")}
+                    onKeyDown={(e) => { handleSlashKeyDown(e); if (e.key === "Enter" && !e.shiftKey && !slashVisible) { e.preventDefault(); handleAddComment(); } }}
+                    placeholder="Viết bình luận... (gõ / để mở lệnh nhanh)"
                     className="w-full bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg outline-none border border-gray-600 focus:border-purple-500 resize-none"
                   />
+                  {slashVisible && slashSource === "comment" && (
+                    <div className="absolute left-0 bottom-full mb-1 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl py-1 w-64">
+                      {filteredSlashCmds.length === 0 ? (
+                        <p className="text-xs text-gray-500 px-3 py-2">Không có lệnh nào khớp</p>
+                      ) : (
+                        filteredSlashCmds.map((cmd, i) => (
+                          <button key={cmd.name} onClick={() => executeSlashCommand(cmd.name)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-purple-600/20 text-purple-300" : "text-gray-300 hover:bg-gray-700"}`}>
+                            <span className="text-base">{cmd.icon}</span>
+                            <div>
+                              <span className="font-medium">/{cmd.name}</span>
+                              <span className="text-gray-500 ml-1.5">{cmd.description}</span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                   <div className="flex justify-end">
                     <button onClick={handleAddComment} disabled={!newComment.trim()}
                       className="text-xs text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
@@ -905,6 +1122,131 @@ export default function CardModal({
                 <p className="text-[11px] text-gray-600 text-center pt-1">
                   Đóng modal không mất timer — mini timer sẽ nổi ở góc màn hình.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: Lặp lại ──────────────────────────────────────────────── */}
+          {tab === "recurring" && (
+            <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-white font-semibold">Tự động lặp lại thẻ này</p>
+                  <p className="text-[11px] text-gray-500">Tạo bản sao thẻ định kỳ hàng ngày, tuần hoặc tháng</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRecur(!isRecur);
+                    if (!isRecur && !nextRecurInput) {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      setNextRecurInput(tomorrow.toISOString().split("T")[0]);
+                    }
+                  }}
+                  className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-300 ${isRecur ? "bg-purple-600 justify-end" : "bg-gray-700 justify-start"}`}
+                >
+                  <span className="w-5 h-5 rounded-full bg-white shadow-md block" />
+                </button>
+              </div>
+
+              {isRecur && (
+                <div className="space-y-3 pt-2 border-t border-gray-700">
+                  <div>
+                    <label className="text-xs text-gray-400 font-medium mb-1.5 block">Chu kỳ lặp</label>
+                    <select
+                      value={recurInterval}
+                      onChange={(e) => setRecurInterval(e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                    >
+                      <option value="DAILY">Hàng ngày (Daily)</option>
+                      <option value="WEEKLY">Hàng tuần (Weekly)</option>
+                      <option value="MONTHLY">Hàng tháng (Monthly)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 font-medium mb-1.5 block">Ngày bắt đầu lặp tiếp theo</label>
+                    <input
+                      type="date"
+                      value={nextRecurInput}
+                      onChange={(e) => setNextRecurInput(e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500 scheme-dark"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── TAB: Liên kết phụ thuộc ────────────────────────────────────── */}
+          {tab === "dependencies" && (
+            <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+              <div>
+                <p className="text-xs text-white font-semibold mb-1">Thẻ đang bị khóa bởi (Blockers)</p>
+                <p className="text-[11px] text-gray-500 mb-3">Các thẻ này cần hoàn thành trước khi thẻ này được làm</p>
+
+                {dependencies.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic py-2">Chưa có liên kết phụ thuộc nào.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {dependencies.map((dep) => {
+                      const isCompleted = dep.dependsOn.list.title.toLowerCase().includes("done") || 
+                                          dep.dependsOn.list.title.toLowerCase().includes("hoàn thành") || 
+                                          dep.dependsOn.list.title.toLowerCase().includes("thành công");
+                      return (
+                        <div key={dep.dependsOnId} className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white font-medium truncate">{dep.dependsOn.title}</p>
+                            <p className="text-[10px] text-gray-500 truncate">Danh sách: {dep.dependsOn.list.title}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isCompleted ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                              {isCompleted ? "Hoàn thành" : "Chưa xong"}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveDep(dep.dependsOnId)}
+                              className="text-gray-500 hover:text-red-400 p-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-700 pt-3">
+                <label className="text-xs text-gray-400 font-medium mb-1.5 block">Thêm thẻ chặn (Blocker)</label>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm thẻ chặn..."
+                  value={depSearch}
+                  onChange={(e) => setDepSearch(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500 mb-2"
+                />
+
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {blockerCandidates
+                    .filter((c) => {
+                      const isAlreadyDep = dependencies.some((d) => d.dependsOnId === c.id);
+                      const matchesSearch = c.title.toLowerCase().includes(depSearch.toLowerCase());
+                      return !isAlreadyDep && matchesSearch;
+                    })
+                    .slice(0, 5)
+                    .map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        onClick={() => handleAddDep(candidate.id)}
+                        className="w-full text-left bg-gray-900/40 hover:bg-gray-700 border border-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300 transition-colors flex items-center justify-between"
+                      >
+                        <span className="truncate">{candidate.title}</span>
+                        <span className="text-[10px] text-gray-500 font-normal shrink-0 ml-2">({candidate.list.title})</span>
+                      </button>
+                    ))}
+                </div>
               </div>
             </div>
           )}
