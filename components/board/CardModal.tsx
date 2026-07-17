@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import {
   X, Check, Trash2, Tag, Users, Plus, Pencil, Calendar,
-  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link, CheckCircle2
+  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link, CheckCircle2, Paperclip
 } from "lucide-react";
 import { updateCard } from "@/app/actions/card";
 import { toggleCardLabel, toggleCardMember, createLabel, deleteLabel, updateLabel } from "@/app/actions/label";
@@ -19,6 +19,8 @@ import {
 import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES, toDateInputValue } from "@/lib/due-date";
 import { usePomodoroStore, WORK_SEC, BREAK_SEC } from "@/store/pomodoroStore";
 import { addCardDependency, removeCardDependency, getBlockerCandidates } from "@/app/actions/dependency";
+import AttachModal from "./AttachModal";
+import AttachmentListInCard from "./AttachmentListInCard";
 
 // ─── inline time helpers ─────────────────────────────────────────────────────
 
@@ -127,7 +129,7 @@ const PRESET_COLORS = [
   "#3b82f6","#8b5cf6","#ec4899","#14b8a6",
 ];
 
-type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies";
+type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies" | "attachments";
 
 // ─── Slash Commands ──────────────────────────────────────────────────────────
 
@@ -171,6 +173,9 @@ export default function CardModal({
   const [dependencies, setDependencies] = useState<CardDependencyT[]>(card.dependencies ?? []);
   const [blockerCandidates, setBlockerCandidates] = useState<any[]>([]);
   const [depSearch, setDepSearch] = useState("");
+
+  // Attach modal
+  const [showAttachModal, setShowAttachModal] = useState(false);
 
   // Slash command states
   const [slashVisible, setSlashVisible] = useState(false);
@@ -713,6 +718,7 @@ export default function CardModal({
               { key: "pomodoro",     icon: <Timer className="w-3.5 h-3.5" />,         label: "Pomodoro" },
               { key: "recurring",    icon: <Repeat className="w-3.5 h-3.5" />,        label: "Lặp lại" },
               { key: "dependencies", icon: <Link className="w-3.5 h-3.5" />,          label: "Liên kết" },
+              { key: "attachments", icon: <Paperclip className="w-3.5 h-3.5" />,    label: "Đính kèm" },
             ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
               <button key={t.key} onClick={() => setTab(tab === t.key ? null : t.key)}
                 className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors ${
@@ -803,7 +809,7 @@ export default function CardModal({
                       <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs text-accent-text font-bold shrink-0">
                         {member.name[0].toUpperCase()}
                       </div>
-                      <span className="text-white flex-1 text-left">{member.name}</span>
+                      <span className="text-gray-900 dark:text-white flex-1 text-left">{member.name}</span>
                       {active && <Check className="w-3.5 h-3.5 text-accent" />}
                     </button>
                   );
@@ -1267,6 +1273,11 @@ export default function CardModal({
             </div>
           )}
 
+          {/* ── TAB: Đính kèm ──────────────────────────────────────────────── */}
+          {tab === "attachments" && (
+            <AttachmentListInCard cardId={localCard.id} onOpenAttach={() => setShowAttachModal(true)} />
+          )}
+
           {/* Nút Lưu / Xóa */}
           <div className="flex gap-2 pt-1">
             <button onClick={handleSave}
@@ -1281,6 +1292,13 @@ export default function CardModal({
 
         </div>
       </div>
+
+      {showAttachModal && (
+        <AttachModal
+          cardId={localCard.id}
+          onClose={() => setShowAttachModal(false)}
+        />
+      )}
     </div>
   );
 }

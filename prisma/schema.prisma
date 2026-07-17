@@ -137,8 +137,28 @@ model Card {
   dependencies       CardDependency[] @relation("BlockedCard")
   blockedCards       CardDependency[] @relation("BlockerCard")
 
+  // Attachments
+  attachments        Attachment[]
+
   @@index([listId])
   @@map("cards")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  type      String   // "file" | "link"
+  url       String
+  fileName  String?
+  fileSize  Int?
+  fileType  String?
+  displayText String?
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
+  @@map("attachments")
 }
 
 model CardDependency {
