@@ -73,7 +73,7 @@ export default async function BoardPage({
   const currentMember = board.workspace.members.find((m) => m.userId === session.userId);
   const isOwner = currentMember?.role === "OWNER";
 
-  const bgStyle = getBoardFullBg(board.color || board.imageUrl);
+  const bgStyle = getBoardFullBg(board.imageUrl);
 
   return (
     <div
