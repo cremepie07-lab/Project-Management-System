@@ -157,6 +157,9 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
             </section>
           )}
 
+          {/* ── SẮP TỚI: Server Component truyền từ page.tsx ── */}
+          {upNextSection}
+
           <section>
             <div className="flex items-center gap-2.5 mb-3.5 px-1">
               <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -168,9 +171,6 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
               ))}
             </div>
           </section>
-
-          {/* ── SẮP TỚI: Server Component truyền từ page.tsx ── */}
-          {upNextSection}
 
           {workspaces.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xs max-w-lg mx-auto">
