@@ -23,11 +23,52 @@ export default async function DashboardPage() {
     },
   });
 
+  // Lấy danh sách thẻ được giao cho người dùng hiện tại
+  const cardMemberships = await prisma.cardMember.findMany({
+    where: {
+      userId: session.userId,
+    },
+    include: {
+      card: {
+        include: {
+          list: {
+            include: {
+              board: {
+                include: {
+                  workspace: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      card: {
+        updatedAt: "desc",
+      },
+    },
+    take: 5,
+  });
+
+  const assignedCards = cardMemberships.map((m) => ({
+    id: m.card.id,
+    title: m.card.title,
+    listName: m.card.list.title,
+    boardName: m.card.list.board.title,
+    workspaceName: m.card.list.board.workspace.name,
+    updatedAt: m.card.updatedAt.toISOString(),
+    actionText: "Bạn đã được phân công vào thẻ này",
+    userAvatar: session.avatarUrl ?? null,
+    userName: session.name,
+  }));
+
   return (
     <DashboardClient
       name={session.name}
       email={session.email}
       avatarUrl={session.avatarUrl ?? null}
+      assignedCards={assignedCards}
       initialWorkspaces={workspaces.map((ws) => ({
         id: ws.id,
         name: ws.name,
