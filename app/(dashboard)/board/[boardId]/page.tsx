@@ -73,28 +73,56 @@ export default async function BoardPage({
   const currentMember = board.workspace.members.find((m) => m.userId === session.userId);
   const isOwner = currentMember?.role === "OWNER";
 
+  const bgStyle = getBoardFullBg(board.color || board.imageUrl);
+
   return (
     <div
-      className="min-h-screen bg-cover bg-center"
-      style={{ background: `linear-gradient(135deg, #1e1b4b, #312e81)` }}
+      className="min-h-screen bg-cover bg-center transition-all duration-300 relative board-page"
+      style={{ background: bgStyle }}
     >
-      <header className="h-14 bg-black/30 backdrop-blur-sm flex items-center px-4 gap-3">
+      {/* Light mode overlay — softens the always-dark board gradient */}
+      <div className="absolute inset-0 bg-white/65 dark:bg-transparent pointer-events-none transition-colors duration-300" />
+
+      <header className="relative z-10 h-14 bg-white dark:bg-black/40 backdrop-blur-md flex items-center px-4 gap-3 border-b border-gray-200 dark:border-white/8 sticky top-0 z-40 select-none shadow-sm transition-colors duration-200">
         <Link
           href="/dashboard"
-          className="text-gray-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+          className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150 cursor-pointer"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-[18px] h-[18px]" />
         </Link>
-        <h1 className="text-white font-bold text-lg">{board.title}</h1>
+        <h1 className="text-gray-900 dark:text-white font-semibold text-sm flex-1 truncate">{board.title}</h1>
         {isOwner && <DeleteBoardButton boardId={board.id} />}
       </header>
 
-      <BoardClient
-        boardId={board.id}
-        initialLists={board.lists as any}
-        initialLabels={board.labels}
-        workspaceMembers={workspaceMembers}
-      />
+      <div className="relative z-10">
+        <BoardClient
+          boardId={board.id}
+          initialLists={board.lists as any}
+          initialLabels={board.labels}
+          workspaceMembers={workspaceMembers}
+        />
+      </div>
     </div>
   );
+}
+
+function getBoardFullBg(color: string | null | undefined) {
+  if (!color) return "linear-gradient(135deg, #1f1e29, #282736)";
+  
+  if (color.startsWith("#")) return color;
+
+  const colorLower = color.toLowerCase();
+  
+  const gradients: Record<string, string> = {
+    purple: "linear-gradient(135deg, #1e1b4b, #312e81, #4c1d95)",
+    blue: "linear-gradient(135deg, #0f172a, #1e3a8a, #172554)",
+    green: "linear-gradient(135deg, #064e3b, #065f46, #022c22)",
+    red: "linear-gradient(135deg, #7f1d1d, #991b1b, #450a0a)",
+    orange: "linear-gradient(135deg, #7c2d12, #9a3412, #431407)",
+    yellow: "linear-gradient(135deg, #78350f, #92400e, #422006)",
+    pink: "linear-gradient(135deg, #831843, #9d174d, #500724)",
+    gray: "linear-gradient(135deg, #1e293b, #334155, #0f172a)",
+  };
+
+  return gradients[colorLower] || "linear-gradient(135deg, #1f1e29, #282736)";
 }

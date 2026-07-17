@@ -43,7 +43,7 @@ export default function UserAvatar({ avatarUrl, name }: UserAvatarProps) {
       <div
         onClick={() => !uploading && inputRef.current?.click()}
         title="Đổi ảnh đại diện"
-        className={`relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-purple-500 transition-all cursor-pointer ${uploading ? "opacity-70 pointer-events-none" : ""}`}
+        className={`relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-accent transition-all cursor-pointer ${uploading ? "opacity-70 pointer-events-none" : ""}`}
       >
         {preview ? (
           <img src={preview} alt={name} className="w-full h-full object-cover" />

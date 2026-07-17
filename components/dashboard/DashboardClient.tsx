@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Star, Clock, Search, Bell, Menu, Settings, Users } from "lucide-react";
+import { Plus, Star, Clock, Search, Menu, Settings, Users } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BoardCard from "@/components/dashboard/BoardCard";
 import CreateWorkspaceModal from "@/components/dashboard/CreateWorkspaceModal";
 import CreateBoardModal from "@/components/dashboard/CreateBoardModal";
 import UserDropdown from "@/components/dashboard/UserDropdown";
+import ThemeToggle from "@/components/dashboard/ThemeToggle";
+import NotificationCenter from "@/components/dashboard/NotificationCenter";
 import { createBoard } from "@/app/actions/board";
 import { createWorkspace } from "@/app/actions/workspace";
 
@@ -59,9 +61,9 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
   }
 
   async function handleCreateWorkspace(name: string, color: string) {
-    const ws = await createWorkspace(name); // gọi DB thật
+    const ws = await createWorkspace(name);
     setWorkspaces((prev) => [...prev, {
-      id: ws.id,       // ← ID thật từ DB
+      id: ws.id,
       name: ws.name,
       slug: ws.slug,
       color,
@@ -88,37 +90,41 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
   }));
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0d0e10] text-gray-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* TOPBAR */}
-      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3 sticky top-0 z-40">
+      <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 gap-3 sticky top-0 z-40 select-none shadow-xs transition-colors duration-200">
         <button
           onClick={() => setSidebarOpen((s) => !s)}
-          className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-[18px] h-[18px]" />
         </button>
 
-        <img src="/logo.svg" alt="WorkFlow" className="h-7 w-auto object-contain" />
+        <img src="/logo.svg" alt="WorkFlow" className="h-6 w-auto object-contain shrink-0" />
 
         <div className="flex-1 max-w-md mx-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm board..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-750 rounded-xl pl-9 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-450 dark:placeholder-gray-500 outline-none focus:border-indigo-500 dark:focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-900 transition-all font-medium"
             />
           </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full" />
-          </button>
+          {/* Light/Dark Toggle */}
+          <ThemeToggle />
+          
+          {/* Notification dropdown */}
+          <NotificationCenter />
 
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1 shrink-0" />
+
+          {/* User profile dropdown */}
           <UserDropdown name={name} email={email} avatarUrl={avatarUrl} />
         </div>
       </header>
@@ -135,14 +141,14 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
           />
         )}
 
-        <main className="flex-1 overflow-y-auto p-6 space-y-8">
+        <main className="flex-1 overflow-y-auto p-6 space-y-8 bg-gray-50/50 dark:bg-transparent">
           {starredBoards.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-4 h-4 text-amber-400" />
-                <h2 className="text-sm font-semibold text-gray-300">Đã gắn sao</h2>
+              <div className="flex items-center gap-2.5 mb-3.5 px-1">
+                <Star className="w-4 h-4 text-amber-500" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Đã gắn sao</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {starredBoards.map((b) => (
                   <BoardCard key={b.id} board={b} onStar={() => toggleStar(b.id)} />
                 ))}
@@ -151,61 +157,64 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
           )}
 
           <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-300">Xem gần đây</h2>
+            <div className="flex items-center gap-2.5 mb-3.5 px-1">
+              <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Xem gần đây</h2>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {recentBoards.map((b) => (
                 <BoardCard key={b.id} board={b} onStar={() => toggleStar(b.id)} />
               ))}
             </div>
           </section>
+
           {workspaces.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <h3 className="text-white font-semibold mb-2">Chưa có Workspace nào</h3>
-            <p className="text-gray-500 text-sm mb-4">Tạo workspace đầu tiên để bắt đầu</p>
-            <button
-              onClick={() => setShowCreateWs(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Tạo Workspace
-            </button>
-          </div>
-        )}
+            <div className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xs max-w-lg mx-auto">
+              <h3 className="text-gray-900 dark:text-white font-semibold text-base mb-2">Chưa có Workspace nào</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-5 max-w-xs leading-normal">
+                Tạo một workspace đầu tiên để có thể quản lý các dự án và board làm việc của nhóm.
+              </p>
+              <button
+                onClick={() => setShowCreateWs(true)}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm cursor-pointer hover:scale-[1.02] active:scale-95 duration-100"
+              >
+                <Plus className="w-4 h-4" /> Tạo Workspace
+              </button>
+            </div>
+          )}
 
           {filteredWorkspaces.map((ws) => (
-            <section key={ws.id}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-lg bg-linear-to-br ${ws.color} flex items-center justify-center text-white text-xs font-bold`}>
+            <section key={ws.id} className="bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl bg-linear-to-br ${ws.color} flex items-center justify-center text-white text-xs font-bold shadow-xs`}>
                     {ws.name[0]}
                   </div>
-                  <h2 className="text-sm font-semibold text-white">{ws.name}</h2>
+                  <h2 className="text-sm font-bold text-gray-900 dark:text-white">{ws.name}</h2>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 select-none">
                   <button
                     onClick={() => router.push(`/workspace/${ws.id}/members`)}
-                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+                    className="text-xs font-medium text-gray-500 dark:text-gray-450 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
                   >
                     <Users className="w-3.5 h-3.5" /> Thành viên
                   </button>
                   <button
                     onClick={() => router.push(`/workspace/${ws.id}/settings`)}
-                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+                    className="text-xs font-medium text-gray-500 dark:text-gray-450 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
                   >
                     <Settings className="w-3.5 h-3.5" /> Cài đặt
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {ws.boards.map((b) => (
                   <BoardCard key={b.id} board={b} onStar={() => toggleStar(b.id)} />
                 ))}
                 <button
                   onClick={() => { setActiveWsId(ws.id); setShowCreateBoard(true); }}
-                  className="h-24 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-dashed border-gray-700 hover:border-gray-600 flex items-center justify-center gap-2 text-gray-400 hover:text-white text-sm transition-all group"
+                  className="h-24 rounded-2xl bg-gray-50 dark:bg-gray-900/60 hover:bg-gray-100 dark:hover:bg-gray-800 border border-dashed border-gray-250 dark:border-gray-800 hover:border-gray-350 dark:hover:border-gray-700 flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-medium transition-all group cursor-pointer hover:scale-[1.01] active:scale-99 shadow-xs"
                 >
                   <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
                   Thêm board

@@ -1,1 +1,247 @@
 @import "tailwindcss";
+
+/* ── Tailwind v4: class-based dark mode (used by next-themes) ── */
+/* Without this, dark: utilities use @media prefers-color-scheme */
+/* and ignore the .dark class toggled by the theme provider.      */
+@variant dark (&:where(.dark, .dark *));
+
+
+/* ═══════════════════════════════════════════════════════════════
+   WorkFlow Design System — CSS Variables
+   Strategy: Linear-inspired, layered neutral surfaces.
+   Dark: deep near-black (not pure black) → reduces eye strain.
+   Light: clean whites with subtle gray hierarchy.
+   Accent: Indigo-violet for primary actions — consistent across modes.
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer base {
+  /* ── DARK MODE (default) ─────────────────────────────────────── */
+  :root,
+  .dark {
+    /* === Backgrounds — layered surfaces === */
+    --bg-app:        #0d0e10;   /* outermost canvas */
+    --bg-sidebar:    #111214;   /* sidebar panel */
+    --bg-header:     #111214;   /* sticky header */
+    --bg-surface:    #18191c;   /* cards, modals, panels */
+    --bg-elevated:   #1f2024;   /* dropdowns, popovers */
+    --bg-hover:      #26272c;   /* hover state */
+    --bg-active:     #2e2f35;   /* active/pressed state */
+    --bg-overlay:    rgba(0,0,0,0.60); /* backdrop overlay */
+
+    /* === Borders === */
+    --border-subtle:  #232428;   /* faintest divider */
+    --border-default: #2c2d33;   /* default border */
+    --border-strong:  #3a3b42;   /* visible border */
+
+    /* === Text === */
+    --text-primary:   #f0f1f3;   /* headings, key text */
+    --text-secondary: #b4b7bf;   /* body, descriptions */
+    --text-muted:     #6c7080;   /* placeholders, timestamps */
+    --text-disabled:  #414450;   /* disabled labels */
+    --text-inverse:   #0d0e10;   /* text on accent bg */
+
+    /* === Brand / Primary accent (indigo-violet) === */
+    --accent:          #6366f1;   /* primary CTA */
+    --accent-hover:    #4f52d3;   /* darker on hover */
+    --accent-subtle:   rgba(99,102,241,0.12);  /* soft bg for badges */
+    --accent-border:   rgba(99,102,241,0.30);  /* badge border */
+    --accent-text:     #ffffff;   /* text on accent bg */
+
+    /* === Semantic Colors === */
+    --success:        #22c55e;
+    --success-subtle: rgba(34,197,94,0.10);
+    --warning:        #f59e0b;
+    --warning-subtle: rgba(245,158,11,0.10);
+    --danger:         #ef4444;
+    --danger-subtle:  rgba(239,68,68,0.08);
+    --danger-border:  rgba(239,68,68,0.20);
+    --info:           #3b82f6;
+    --info-subtle:    rgba(59,130,246,0.10);
+
+    /* === Shadows === */
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25);
+    --shadow-md:  0 4px 12px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.30);
+    --shadow-lg:  0 12px 32px rgba(0,0,0,0.55), 0 4px 8px rgba(0,0,0,0.35);
+
+    /* === Sidebar width === */
+    --sidebar-w: 240px;
+
+    /* === Chart / data colors === */
+    --chart-1: #6366f1;
+    --chart-2: #22c55e;
+    --chart-3: #f59e0b;
+    --chart-4: #ef4444;
+    --chart-5: #3b82f6;
+  }
+
+  /* ── LIGHT MODE ──────────────────────────────────────────────── */
+  .light {
+    --bg-app:        #f5f6f8;
+    --bg-sidebar:    #ffffff;
+    --bg-header:     #ffffff;
+    --bg-surface:    #ffffff;
+    --bg-elevated:   #ffffff;
+    --bg-hover:      #f0f1f4;
+    --bg-active:     #e8eaf0;
+    --bg-overlay:    rgba(0,0,0,0.40);
+
+    --border-subtle:  #eaedf2;
+    --border-default: #dde0e8;
+    --border-strong:  #c8ccd6;
+
+    --text-primary:   #0f1117;
+    --text-secondary: #44485a;
+    --text-muted:     #8a8fa8;
+    --text-disabled:  #bbbec9;
+    --text-inverse:   #ffffff;
+
+    --accent:          #5558e8;
+    --accent-hover:    #4245cc;
+    --accent-subtle:   rgba(85,88,232,0.08);
+    --accent-border:   rgba(85,88,232,0.25);
+    --accent-text:     #ffffff;
+
+    --success:        #16a34a;
+    --success-subtle: rgba(22,163,74,0.08);
+    --warning:        #d97706;
+    --warning-subtle: rgba(217,119,6,0.08);
+    --danger:         #dc2626;
+    --danger-subtle:  rgba(220,38,38,0.06);
+    --danger-border:  rgba(220,38,38,0.18);
+    --info:           #2563eb;
+    --info-subtle:    rgba(37,99,235,0.08);
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-lg:  0 12px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+
+    --chart-1: #5558e8;
+    --chart-2: #16a34a;
+    --chart-3: #d97706;
+    --chart-4: #dc2626;
+    --chart-5: #2563eb;
+  }
+
+  /* ── BASE RESET ──────────────────────────────────────────────── */
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth transition only for bg/color (avoids scroll jitter) */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, color, border-color, fill, stroke, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Reset transitions on drag elements & animations */
+  [data-no-transition],
+  [style*="transform"],
+  .animate-spin {
+    transition: none !important;
+  }
+
+  /* Custom scrollbar — theme-aware */
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: var(--border-strong); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Focus outline */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* date inputs look good in both themes */
+  input[type="date"] { color-scheme: dark; }
+  .light input[type="date"] { color-scheme: light; }
+
+  /* Prevent flash of wrong theme */
+  .no-theme-transition,
+  .no-theme-transition *,
+  .no-theme-transition *::before,
+  .no-theme-transition *::after {
+    transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Tailwind v4 @theme — map CSS vars into utility classes
+   ═══════════════════════════════════════════════════════════════ */
+@theme {
+  /* Backgrounds */
+  --color-bg-app:      var(--bg-app);
+  --color-bg-sidebar:  var(--bg-sidebar);
+  --color-bg-header:   var(--bg-header);
+  --color-bg-surface:  var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover:    var(--bg-hover);
+  --color-bg-active:   var(--bg-active);
+  --color-bg-overlay:  var(--bg-overlay);
+
+  /* Borders */
+  --color-border-subtle:  var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong:  var(--border-strong);
+
+  /* Text */
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:     var(--text-muted);
+  --color-text-disabled:  var(--text-disabled);
+  --color-text-inverse:   var(--text-inverse);
+
+  /* Accent */
+  --color-accent:        var(--accent);
+  --color-accent-hover:  var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+  --color-accent-text:   var(--accent-text);
+
+  /* Semantic */
+  --color-success:        var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning:        var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger:         var(--danger);
+  --color-danger-subtle:  var(--danger-subtle);
+  --color-danger-border:  var(--danger-border);
+  --color-info:           var(--info);
+  --color-info-subtle:    var(--info-subtle);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Custom utilities
+   ═══════════════════════════════════════════════════════════════ */
+@layer utilities {
+  .ring-accent-subtle {
+    --tw-ring-color: var(--accent-subtle);
+  }
+}

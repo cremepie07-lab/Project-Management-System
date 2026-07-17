@@ -26,6 +26,7 @@ model User {
   activities      Activity[]
   timeEntries     TimeEntry[]
   completedCards  Card[]       @relation("CompletedBy")
+  notifications   Notification[]
 
   @@map("users")
 }
@@ -242,4 +243,18 @@ model CardMember {
 
   @@id([cardId, userId])
   @@map("card_members")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("notifications")
 }

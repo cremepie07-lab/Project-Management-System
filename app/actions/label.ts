@@ -37,7 +37,7 @@ export async function toggleCardLabel(cardId: string, labelId: string) {
 }
 
 export async function toggleCardMember(cardId: string, userId: string) {
-  await requireSession();
+  const session = await requireSession();
   const existing = await prisma.cardMember.findUnique({
     where: { cardId_userId: { cardId, userId } },
   });
@@ -46,5 +46,35 @@ export async function toggleCardMember(cardId: string, userId: string) {
     return { action: "removed" };
   }
   await prisma.cardMember.create({ data: { cardId, userId } });
+
+  // Create notification if assigning to someone else
+  if (userId !== session.userId) {
+    try {
+      const card = await prisma.card.findUnique({
+        where: { id: cardId },
+        select: {
+          title: true,
+          list: {
+            select: {
+              boardId: true,
+            },
+          },
+        },
+      });
+      if (card) {
+        await prisma.notification.create({
+          data: {
+            userId,
+            title: "Nhiệm vụ mới được giao",
+            message: `${session.name} đã gán thẻ "${card.title}" cho bạn.`,
+            linkUrl: `/board/${card.list.boardId}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Failed to create notification:", err);
+    }
+  }
+
   return { action: "added" };
 }

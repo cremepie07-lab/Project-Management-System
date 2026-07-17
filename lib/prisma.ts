@@ -1,5 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+
+// In Node.js environments (dev server, non-edge), use the ws package for WebSocket
+// This prevents "ErrorEvent" crashes from the Neon adapter's WebSocket transport
+if (typeof WebSocket === "undefined") {
+  neonConfig.webSocketConstructor = ws;
+}
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
@@ -12,11 +20,11 @@ function createPrismaClient() {
     adapter,
     log:
       process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
+        ? ["error", "warn"]
         : ["error"],
   });
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

@@ -101,14 +101,14 @@ export default function PomodoroMiniTimer() {
   const circ   = 2 * Math.PI * 20; // r=20 cho SVG nhỏ
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl px-4 py-3 min-w-55">
+    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-bg-surface border border-border-default rounded-2xl shadow-2xl px-4 py-3 min-w-55">
       {/* SVG mini ring */}
       <div className="relative shrink-0" style={{ width: 48, height: 48 }}>
         <svg className="-rotate-90" width="48" height="48" viewBox="0 0 48 48">
-          <circle cx="24" cy="24" r="20" fill="none" stroke="#374151" strokeWidth="4" />
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border-default)" strokeWidth="4" />
           <circle
             cx="24" cy="24" r="20" fill="none"
-            stroke={isWork ? "#a855f7" : "#22c55e"}
+            stroke={isWork ? "var(--accent)" : "var(--success)"}
             strokeWidth="4" strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={circ * (1 - pct / 100)}
@@ -116,20 +116,20 @@ export default function PomodoroMiniTimer() {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Timer className="w-4 h-4 text-gray-400" />
+          <Timer className="w-4 h-4 text-text-muted" />
         </div>
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-gray-500 truncate mb-0.5">
+        <p className="text-[10px] text-text-muted truncate mb-0.5">
           {store.cardTitle ?? "Pomodoro"}
         </p>
         <div className="flex items-center gap-1.5">
-          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isWork ? "bg-purple-600/20 text-purple-300" : "bg-green-600/20 text-green-300"}`}>
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isWork ? "bg-accent-subtle text-accent" : "bg-success-subtle text-success"}`}>
             {isWork ? "Tập trung" : "Nghỉ"}
           </span>
-          <span className="text-lg font-bold text-white tabular-nums font-mono">
+          <span className="text-lg font-bold text-text-primary tabular-nums font-mono">
             {fmt(remaining)}
           </span>
         </div>
@@ -140,7 +140,7 @@ export default function PomodoroMiniTimer() {
         {store.running ? (
           <button
             onClick={() => store.pause()}
-            className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-bg-hover hover:bg-bg-active text-text-primary flex items-center justify-center transition-colors cursor-pointer"
             title="Tạm dừng"
           >
             <Pause className="w-3.5 h-3.5" />
@@ -148,15 +148,15 @@ export default function PomodoroMiniTimer() {
         ) : (
           <button
             onClick={() => store.start()}
-            className="w-8 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-accent hover:bg-accent-hover text-accent-text flex items-center justify-center transition-colors cursor-pointer"
             title="Tiếp tục"
           >
-            <Play className="w-3.5 h-3.5 fill-white" />
+            <Play className="w-3.5 h-3.5 fill-accent-text" />
           </button>
         )}
         <button
           onClick={() => store.reset()}
-          className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg bg-bg-hover hover:bg-bg-active text-text-secondary flex items-center justify-center transition-colors cursor-pointer"
           title="Đặt lại"
         >
           <RotateCcw className="w-3.5 h-3.5" />

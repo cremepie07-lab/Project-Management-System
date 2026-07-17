@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+// @ts-ignore
+import confetti from "canvas-confetti";
 import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2, Circle } from "lucide-react";
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
@@ -81,67 +83,87 @@ function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick
     <div
       ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={onClick}
-      className={`bg-gray-800 border rounded-xl px-3 py-2.5 cursor-pointer transition-all ${card.isCompleted ? "border-emerald-500/30 opacity-70" : isBlocked ? "border-amber-500/50 hover:border-amber-500 bg-gray-800/90" : "border-gray-700 hover:border-gray-600"}`}
+      className={`group bg-slate-50 dark:bg-slate-800/90 border rounded-xl px-3.5 py-3 cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md active:scale-[0.99] ${
+        card.isCompleted
+          ? "border-emerald-300/40 dark:border-emerald-500/20 opacity-55"
+          : isBlocked
+          ? "border-amber-400/60 dark:border-amber-500/40"
+          : "border-slate-200 dark:border-slate-700/70 hover:border-slate-300 dark:hover:border-slate-600"
+      }`}
     >
       {card.cardLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div className="flex flex-wrap gap-1 mb-2.5">
           {card.cardLabels.map((cl) => (
-            <span key={cl.labelId} className="h-1.5 w-8 rounded-full" style={{ backgroundColor: cl.label.color }} />
+            <span key={cl.labelId} className="h-1.5 w-9 rounded-full" style={{ backgroundColor: cl.label.color }} />
           ))}
         </div>
       )}
-      <div className="flex items-start justify-between gap-1.5">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={onToggleComplete}
-            className="shrink-0 p-0.5 rounded-full hover:bg-gray-700/50 transition-colors"
+            className="shrink-0 p-0.5 rounded-full transition-all cursor-pointer hover:scale-110 duration-100"
             title={card.isCompleted ? "Bỏ hoàn thành" : "Đánh dấu hoàn thành"}
           >
             {card.isCompleted ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             ) : (
-              <Circle className="w-4 h-4 text-gray-500 hover:text-gray-400" />
+              <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500 transition-colors" />
             )}
           </button>
-          <p className={`text-sm leading-snug ${card.isCompleted ? "text-gray-400 line-through" : isBlocked ? "text-gray-300" : "text-white"}`}>{card.title}</p>
+          <p className={`text-[13px] font-medium leading-snug ${
+            card.isCompleted
+              ? "text-slate-400 dark:text-slate-500 line-through"
+              : isBlocked
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-slate-800 dark:text-slate-100"
+          }`}>{card.title}</p>
         </div>
-        {isBlocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />}
+        {isBlocked && <Lock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />}
       </div>
-      {card.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{card.description}</p>}
+      {card.description && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 line-clamp-2 ml-6 leading-relaxed">{card.description}</p>}
 
       {hasMeta && (
-        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap ml-6">
           {isBlocked && (
-            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20" title={`Bị khóa bởi ${blockerCount} thẻ chưa hoàn thành`}>
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20" title={`Bị khóa bởi ${blockerCount} thẻ chưa hoàn thành`}>
               Bị chặn
             </span>
           )}
           {dueStatus && card.dueDate && (
-            <span className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md border ${DUE_DATE_STYLES[dueStatus]}`}>
-              <Calendar className="w-3 h-3" />
+            <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border ${DUE_DATE_STYLES[dueStatus]}`}>
+              <Calendar className="w-2.5 h-2.5" />
               {formatDueDate(card.dueDate)}
             </span>
           )}
           {totalItems > 0 && (
-            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
-              <ListChecks className="w-3 h-3" /> {doneItems}/{totalItems}
+            <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
+              doneItems === totalItems
+                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400"
+            }`}>
+              <ListChecks className="w-2.5 h-2.5" /> {doneItems}/{totalItems}
             </span>
           )}
           {trackedSeconds > 0 && (
-            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
-              <Clock className="w-3 h-3" /> {formatDuration(trackedSeconds)}
+            <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400">
+              <Clock className="w-2.5 h-2.5" /> {formatDuration(trackedSeconds)}
             </span>
           )}
           {commentCount > 0 && (
-            <span className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-gray-700/60 text-gray-400">
-              <MessageSquare className="w-3 h-3" /> {commentCount}
+            <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400">
+              <MessageSquare className="w-2.5 h-2.5" /> {commentCount}
             </span>
           )}
-          {card.cardMembers.map((cm) => (
-            <div key={cm.userId} className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold" title={cm.user.name}>
-              {cm.user.name[0].toUpperCase()}
+          {card.cardMembers.length > 0 && (
+            <div className="flex -space-x-1 ml-auto">
+              {card.cardMembers.map((cm) => (
+                <div key={cm.userId} className="w-5 h-5 rounded-full bg-indigo-500 border-2 border-slate-50 dark:border-slate-800 flex items-center justify-center text-[9px] text-white font-semibold" title={cm.user.name}>
+                  {cm.user.name[0].toUpperCase()}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
@@ -161,24 +183,24 @@ function SortableList({ list, children, onDelete, onRename }: {
   const [title, setTitle] = useState(list.title);
 
   return (
-    <div ref={setNodeRef} style={style} className="shrink-0 w-64 bg-gray-900/90 backdrop-blur rounded-2xl flex flex-col">
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <GripVertical {...attributes} {...listeners} className="w-3.5 h-3.5 text-gray-600 cursor-grab shrink-0" />
+    <div ref={setNodeRef} style={style} className="shrink-0 w-68 bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl flex flex-col shadow-sm">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2.5">
+        <GripVertical {...attributes} {...listeners} className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-grab shrink-0 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" />
         {editing ? (
           <input
             autoFocus value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { onRename(title); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
             onBlur={() => { onRename(title); setEditing(false); }}
-            className="flex-1 bg-gray-800 text-white text-sm font-semibold px-2 py-0.5 rounded-lg outline-none border border-purple-500"
+            className="flex-1 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-semibold px-2 py-0.5 rounded-lg outline-none border border-indigo-400 dark:border-indigo-500"
           />
         ) : (
-          <span className="flex-1 text-sm font-semibold text-white cursor-pointer" onDoubleClick={() => setEditing(true)}>
+          <span className="flex-1 text-[11px] font-semibold text-slate-600 dark:text-slate-200 cursor-pointer tracking-wide" onDoubleClick={() => setEditing(true)}>
             {list.title}
           </span>
         )}
-        <span className="text-xs text-gray-500">{list.cards.length}</span>
-        <button onClick={onDelete} className="text-gray-600 hover:text-red-400 transition-colors p-0.5 rounded">
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-slate-700/70 px-1.5 py-0.5 rounded-full min-w-4.5 text-center">{list.cards.length}</span>
+        <button onClick={onDelete} className="text-slate-300 dark:text-slate-600 hover:text-red-400 dark:hover:text-red-400 transition-colors p-0.5 rounded cursor-pointer">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -200,25 +222,33 @@ function FilterBar({ boardLabels, workspaceMembers, filterLabels, filterMembers,
     <div className="relative">
       <button
         onClick={() => setOpen((p) => !p)}
-        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-colors ${isFiltering ? "bg-purple-600 border-purple-500 text-white" : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"}`}
+        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-colors duration-200 cursor-pointer ${
+          isFiltering
+            ? "bg-indigo-600 border-indigo-600 text-white dark:bg-indigo-500 dark:border-indigo-500"
+            : "border-slate-300 dark:border-white/15 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:border-slate-400 dark:hover:border-white/30 bg-white/80 dark:bg-transparent"
+        }`}
       >
         <Filter className="w-3.5 h-3.5" />
         Lọc {isFiltering && `(${filterLabels.length + filterMembers.length})`}
       </button>
 
       {open && (
-        <div className="absolute top-9 left-0 z-40 bg-gray-900 border border-gray-700 rounded-2xl p-3 w-64 shadow-2xl space-y-3">
+        <div className="absolute top-9 left-0 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-3 w-64 shadow-xl dark:shadow-black/40 space-y-3 transition-colors duration-200">
           {boardLabels.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1.5">Nhãn</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1.5">Nhãn</p>
               <div className="space-y-1">
                 {boardLabels.map((l) => (
                   <button key={l.id} onClick={() => onToggleLabel(l.id)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${filterLabels.includes(l.id) ? "bg-gray-700" : "hover:bg-gray-800"}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors duration-150 cursor-pointer ${
+                      filterLabels.includes(l.id)
+                        ? "bg-slate-100 dark:bg-slate-800"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
-                    <span className="text-white">{l.name}</span>
-                    {filterLabels.includes(l.id) && <span className="ml-auto text-purple-400">✓</span>}
+                    <span className="text-slate-800 dark:text-slate-100">{l.name}</span>
+                    {filterLabels.includes(l.id) && <span className="ml-auto text-indigo-600 dark:text-indigo-400">✓</span>}
                   </button>
                 ))}
               </div>
@@ -226,24 +256,28 @@ function FilterBar({ boardLabels, workspaceMembers, filterLabels, filterMembers,
           )}
           {workspaceMembers.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1.5">Thành viên</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1.5">Thành viên</p>
               <div className="space-y-1">
                 {workspaceMembers.map((m) => (
                   <button key={m.id} onClick={() => onToggleMember(m.id)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${filterMembers.includes(m.id) ? "bg-gray-700" : "hover:bg-gray-800"}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors duration-150 cursor-pointer ${
+                      filterMembers.includes(m.id)
+                        ? "bg-slate-100 dark:bg-slate-800"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
-                    <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-indigo-500 dark:bg-indigo-600 flex items-center justify-center text-[9px] text-white font-semibold shrink-0">
                       {m.name[0].toUpperCase()}
                     </div>
-                    <span className="text-white">{m.name}</span>
-                    {filterMembers.includes(m.id) && <span className="ml-auto text-purple-400">✓</span>}
+                    <span className="text-slate-800 dark:text-slate-100">{m.name}</span>
+                    {filterMembers.includes(m.id) && <span className="ml-auto text-indigo-600 dark:text-indigo-400">✓</span>}
                   </button>
                 ))}
               </div>
             </div>
           )}
           {isFiltering && (
-            <button onClick={onClear} className="w-full text-xs text-red-400 hover:text-red-300 py-1 transition-colors">
+            <button onClick={onClear} className="w-full text-xs text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 py-1 transition-colors duration-150 cursor-pointer">
               Xóa bộ lọc
             </button>
           )}
@@ -330,6 +364,19 @@ export default function BoardClient({
     const updated = currentlyCompleted
       ? await undoCardComplete(cardId)
       : await markCardComplete(cardId);
+    // 🎉 Fire confetti when marking a card as complete
+    if (!currentlyCompleted) {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: {
+          x: e.clientX / window.innerWidth,
+          y: e.clientY / window.innerHeight,
+        },
+        colors: ["#6366f1", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899"],
+        disableForReducedMotion: true,
+      });
+    }
     setLists((prev) => prev.map((l) => ({
       ...l,
       cards: l.cards.map((c) => c.id === cardId
@@ -403,16 +450,16 @@ export default function BoardClient({
           onToggleMember={toggleMemberFilter}
           onClear={clearFilters}
         />
-        {isFiltering && <span className="text-xs text-gray-500">Đang lọc — một số thẻ bị ẩn</span>}
+        {isFiltering && <span className="text-xs text-slate-500 dark:text-slate-400">Đang lọc — một số thẻ bị ẩn</span>}
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
-        <div className="flex gap-4 p-4 overflow-x-auto min-h-[calc(100vh-56px)] items-start">
+        <div className="flex gap-3.5 p-4 overflow-x-auto min-h-[calc(100vh-56px)] items-start">
           <SortableContext items={lists.map((l) => l.id)} strategy={horizontalListSortingStrategy}>
             {filteredLists.map((list) => (
               <SortableList key={list.id} list={list} onDelete={() => handleDeleteList(list.id)} onRename={(t) => handleRenameList(list.id, t)}>
                 <SortableContext items={list.cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  <div className="px-2 pb-2 space-y-2 min-h-8">
+                  <div className="px-2.5 pb-2 space-y-2 min-h-8">
                     {list.cards.map((card) => (
                       <SortableCard key={card.id} card={card} onClick={() => setSelectedCard({ card, listId: list.id })} onToggleComplete={(e) => handleToggleComplete(card.id, card.isCompleted ?? false, e)} />
                     ))}
@@ -420,20 +467,20 @@ export default function BoardClient({
                 </SortableContext>
 
                 {addingCardTo === list.id ? (
-                  <div className="px-2 pb-2 space-y-1.5">
+                  <div className="px-2.5 pb-2.5 space-y-2">
                     <textarea autoFocus value={newCardTitle}
                       onChange={(e) => setNewCardTitle(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddCard(list.id); } if (e.key === "Escape") setAddingCardTo(null); }}
                       placeholder="Nhập tiêu đề thẻ..." rows={2}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 resize-none"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-[13px] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-400 dark:focus:border-indigo-500 resize-none shadow-sm"
                     />
                     <div className="flex gap-1.5">
-                      <button onClick={() => handleAddCard(list.id)} className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Thêm</button>
-                      <button onClick={() => setAddingCardTo(null)} className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleAddCard(list.id)} className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm">Thêm</button>
+                      <button onClick={() => setAddingCardTo(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => setAddingCardTo(list.id)} className="flex items-center gap-1.5 text-gray-500 hover:text-white text-xs px-3 py-2.5 hover:bg-white/5 rounded-b-2xl transition-colors w-full">
+                  <button onClick={() => setAddingCardTo(list.id)} className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-medium px-3 py-2.5 hover:bg-slate-200/60 dark:hover:bg-slate-700/40 rounded-b-xl transition-all w-full cursor-pointer">
                     <Plus className="w-3.5 h-3.5" /> Thêm thẻ
                   </button>
                 )}
@@ -442,19 +489,19 @@ export default function BoardClient({
           </SortableContext>
 
           {addingList ? (
-            <div className="shrink-0 w-64 bg-gray-900/90 backdrop-blur rounded-2xl p-2 space-y-1.5">
+            <div className="shrink-0 w-68 bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl p-2.5 space-y-2 transition-colors duration-200">
               <input autoFocus value={newListTitle} onChange={(e) => setNewListTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddList(); if (e.key === "Escape") setAddingList(false); }}
                 placeholder="Nhập tên cột..."
-                className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-[13px] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors duration-200"
               />
               <div className="flex gap-1.5">
-                <button onClick={handleAddList} className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Thêm cột</button>
-                <button onClick={() => setAddingList(false)} className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                <button onClick={handleAddList} className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer shadow-sm">Thêm cột</button>
+                <button onClick={() => setAddingList(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors duration-150 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setAddingList(true)} className="shrink-0 w-64 h-12 bg-white/10 hover:bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center gap-2 text-white/70 hover:text-white text-sm transition-all">
+            <button onClick={() => setAddingList(true)} className="shrink-0 w-68 h-11 bg-transparent hover:bg-slate-900/5 dark:hover:bg-white/5 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-2 border-dashed border-slate-400/40 dark:border-white/15 hover:border-slate-500/50 dark:hover:border-white/30 text-xs font-semibold transition-all duration-200 cursor-pointer">
               <Plus className="w-4 h-4" /> Thêm cột mới
             </button>
           )}
@@ -462,13 +509,13 @@ export default function BoardClient({
 
         <DragOverlay>
           {activeType === "card" && activeCard && (
-            <div className="bg-gray-800 border border-purple-500 rounded-xl px-3 py-2.5 w-60 shadow-2xl rotate-2">
-              <p className="text-sm text-white">{activeCard.title}</p>
+            <div className="bg-slate-50 dark:bg-slate-800 border border-indigo-400 dark:border-indigo-500 rounded-xl px-3.5 py-3 w-68 shadow-2xl rotate-2 opacity-90">
+              <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100">{activeCard.title}</p>
             </div>
           )}
           {activeType === "list" && activeList && (
-            <div className="bg-gray-900/90 border border-purple-500 rounded-2xl w-64 px-3 py-3 shadow-2xl rotate-1">
-              <p className="text-sm font-semibold text-white">{activeList.title}</p>
+            <div className="bg-slate-100 dark:bg-slate-800/80 border border-indigo-400/50 dark:border-white/10 rounded-xl w-68 px-3 py-3 shadow-2xl rotate-1 opacity-90">
+              <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-200 tracking-wide">{activeList.title}</p>
             </div>
           )}
         </DragOverlay>

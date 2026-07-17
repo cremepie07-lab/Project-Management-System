@@ -604,16 +604,16 @@ export default function CardModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-bg-overlay backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-bg-surface border border-border-default rounded-2xl w-full max-w-lg shadow-lg max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
-          <h3 className="font-semibold text-white">Chi tiết thẻ</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+        <div className="flex items-center justify-between p-4 border-b border-border-subtle sticky top-0 bg-bg-surface">
+          <h3 className="font-semibold text-text-primary">Chi tiết thẻ</h3>
+          <button onClick={onClose} className="cursor-pointer text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-bg-hover transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -624,7 +624,7 @@ export default function CardModal({
           {(localCard.cardLabels.length > 0 || dueStatus || totalItems > 0 || isCompleted) && (
             <div className="flex flex-wrap items-center gap-1.5">
               {isCompleted && (
-                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-success-subtle text-success border-success/20">
                   <CheckCircle2 className="w-3 h-3" />
                   Hoàn thành{completedAt && ` ${fmtDate(completedAt)}`}
                 </span>
@@ -643,7 +643,7 @@ export default function CardModal({
                 </span>
               )}
               {totalItems > 0 && (
-                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-gray-700/50 text-gray-300 border-gray-700">
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-bg-hover text-text-secondary border-border-default">
                   <ListChecks className="w-3 h-3" /> {doneItems}/{totalItems}
                 </span>
               )}
@@ -654,11 +654,11 @@ export default function CardModal({
           {localCard.cardMembers.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localCard.cardMembers.map(cm => (
-                <div key={cm.userId} className="flex items-center gap-1.5 bg-gray-800 rounded-full px-2 py-1">
-                  <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0">
+                <div key={cm.userId} className="flex items-center gap-1.5 bg-bg-elevated rounded-full px-2 py-1">
+                  <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center text-xs text-accent-text font-bold shrink-0">
                     {cm.user.name[0].toUpperCase()}
                   </div>
-                  <span className="text-xs text-gray-300">{cm.user.name}</span>
+                  <span className="text-xs text-text-secondary">{cm.user.name}</span>
                 </div>
               ))}
             </div>
@@ -666,33 +666,33 @@ export default function CardModal({
 
           {/* Tiêu đề */}
           <div>
-            <label className="text-xs text-gray-400 font-medium mb-1.5 block">Tiêu đề</label>
+            <label className="text-xs text-text-muted font-medium mb-1.5 block">Tiêu đề</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-bg-elevated border border-border-default rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent transition-colors cursor-text"
             />
           </div>
 
           {/* Mô tả */}
           <div className="relative">
-            <label className="text-xs text-gray-400 font-medium mb-1.5 block">Mô tả</label>
+            <label className="text-xs text-text-muted font-medium mb-1.5 block">Mô tả</label>
             <textarea ref={descRef} rows={3} value={desc}
               onChange={(e) => handleSlashInput(e, "desc")}
               onKeyDown={(e) => handleSlashKeyDown(e)}
               placeholder="Thêm mô tả... (gõ / để mở lệnh nhanh)"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors resize-none"
+              className="w-full bg-bg-elevated border border-border-default rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none focus:border-accent transition-colors resize-none"
             />
             {slashVisible && slashSource === "desc" && (
-              <div className="absolute left-0 top-full mt-1 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl py-1 w-64">
+              <div className="absolute left-0 top-full mt-1 z-50 bg-bg-elevated border border-border-default rounded-xl shadow-lg py-1 w-64">
                 {filteredSlashCmds.length === 0 ? (
-                  <p className="text-xs text-gray-500 px-3 py-2">Không có lệnh nào khớp</p>
+                  <p className="text-xs text-text-muted px-3 py-2">Không có lệnh nào khớp</p>
                 ) : (
                   filteredSlashCmds.map((cmd, i) => (
                     <button key={cmd.name} onClick={() => executeSlashCommand(cmd.name)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-purple-600/20 text-purple-300" : "text-gray-300 hover:bg-gray-700"}`}>
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-accent-subtle text-accent" : "text-text-secondary hover:bg-bg-hover"}`}>
                       <span className="text-base">{cmd.icon}</span>
                       <div>
                         <span className="font-medium">/{cmd.name}</span>
-                        <span className="text-gray-500 ml-1.5">{cmd.description}</span>
+                        <span className="text-text-muted ml-1.5">{cmd.description}</span>
                       </div>
                     </button>
                   ))
@@ -717,14 +717,14 @@ export default function CardModal({
               <button key={t.key} onClick={() => setTab(tab === t.key ? null : t.key)}
                 className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors ${
                   tab === t.key
-                    ? "bg-purple-600 border-purple-500 text-white"
-                    : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+                    ? "bg-accent border-accent text-accent-text"
+                    : "border-border-default text-text-muted hover:text-text-primary hover:border-border-strong"
                 }`}
               >
                 {t.icon} {t.label}
                 {/* Dot indicator khi Pomodoro đang chạy */}
                 {t.key === "pomodoro" && pomo.running && tab !== "pomodoro" && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 )}
               </button>
             ))}
@@ -732,15 +732,15 @@ export default function CardModal({
 
           {/* ── TAB: Nhãn ──────────────────────────────────────────────────── */}
           {tab === "labels" && (
-            <div className="bg-gray-800 rounded-xl p-3 space-y-3">
-              <p className="text-xs text-gray-400 font-medium">Chọn nhãn</p>
+            <div className="bg-bg-elevated rounded-xl p-3 space-y-3">
+              <p className="text-xs text-text-muted font-medium">Chọn nhãn</p>
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {boardLabels.map(label =>
                   editingLabel?.id === label.id ? (
                     <div key={label.id} className="flex items-center gap-2">
                       <input value={editingLabel.name}
                         onChange={e => setEditingLabel({ ...editingLabel, name: e.target.value })}
-                        className="flex-1 bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg outline-none border border-purple-500"
+                        className="flex-1 bg-bg-hover text-text-primary text-xs px-2 py-1.5 rounded-lg outline-none border border-accent"
                       />
                       <div className="flex gap-1">
                         {PRESET_COLORS.map(c => (
@@ -750,30 +750,30 @@ export default function CardModal({
                           />
                         ))}
                       </div>
-                      <button onClick={handleUpdateLabel} className="text-green-400 hover:text-green-300"><Check className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => setEditingLabel(null)} className="text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                      <button onClick={handleUpdateLabel} className="text-success hover:text-success/80"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditingLabel(null)} className="text-text-muted hover:text-text-primary"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   ) : (
                     <div key={label.id} className="flex items-center gap-2">
                       <button onClick={() => handleToggleLabel(label.id)}
                         className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
-                          localCard.cardLabels.some(cl => cl.labelId === label.id) ? "bg-gray-700" : "hover:bg-gray-700"
+                          localCard.cardLabels.some(cl => cl.labelId === label.id) ? "bg-bg-hover" : "hover:bg-bg-hover"
                         }`}
                       >
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
                         <span className="text-white">{label.name}</span>
-                        {localCard.cardLabels.some(cl => cl.labelId === label.id) && <Check className="w-3 h-3 text-purple-400 ml-auto" />}
+                        {localCard.cardLabels.some(cl => cl.labelId === label.id) && <Check className="w-3 h-3 text-accent ml-auto" />}
                       </button>
-                      <button onClick={() => setEditingLabel(label)} className="text-gray-500 hover:text-white p-1"><Pencil className="w-3 h-3" /></button>
-                      <button onClick={() => handleDeleteLabel(label.id)} className="text-gray-500 hover:text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => setEditingLabel(label)} className="text-text-muted hover:text-text-primary p-1"><Pencil className="w-3 h-3" /></button>
+                      <button onClick={() => handleDeleteLabel(label.id)} className="text-text-muted hover:text-danger p-1"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   )
                 )}
               </div>
-              <div className="border-t border-gray-700 pt-3 space-y-2">
-                <p className="text-xs text-gray-500">Tạo nhãn mới</p>
+              <div className="border-t border-border-default pt-3 space-y-2">
+                <p className="text-xs text-text-muted">Tạo nhãn mới</p>
                 <input value={newLabelName} onChange={e => setNewLabelName(e.target.value)} placeholder="Tên nhãn..."
-                  className="w-full bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg outline-none border border-gray-600 focus:border-purple-500"
+                  className="w-full bg-bg-hover text-text-primary text-xs px-2 py-1.5 rounded-lg outline-none border border-border-strong focus:border-accent"
                 />
                 <div className="flex gap-1.5 flex-wrap">
                   {PRESET_COLORS.map(c => (
@@ -782,7 +782,7 @@ export default function CardModal({
                     />
                   ))}
                 </div>
-                <button onClick={handleCreateLabel} className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
+                <button onClick={handleCreateLabel} className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors">
                   <Plus className="w-3.5 h-3.5" /> Tạo nhãn
                 </button>
               </div>
@@ -791,20 +791,20 @@ export default function CardModal({
 
           {/* ── TAB: Thành viên ────────────────────────────────────────────── */}
           {tab === "members" && (
-            <div className="bg-gray-800 rounded-xl p-3 space-y-2">
-              <p className="text-xs text-gray-400 font-medium">Phân công thành viên</p>
+            <div className="bg-bg-elevated rounded-xl p-3 space-y-2">
+              <p className="text-xs text-text-muted font-medium">Phân công thành viên</p>
               <div className="space-y-1 max-h-48 overflow-y-auto">
                 {workspaceMembers.map(member => {
                   const active = localCard.cardMembers.some(cm => cm.userId === member.id);
                   return (
                     <button key={member.id} onClick={() => handleToggleMember(member.id)}
-                      className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs transition-colors ${active ? "bg-gray-700" : "hover:bg-gray-700"}`}
+                      className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs transition-colors ${active ? "bg-bg-hover" : "hover:bg-bg-hover"}`}
                     >
-                      <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs text-accent-text font-bold shrink-0">
                         {member.name[0].toUpperCase()}
                       </div>
                       <span className="text-white flex-1 text-left">{member.name}</span>
-                      {active && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                      {active && <Check className="w-3.5 h-3.5 text-accent" />}
                     </button>
                   );
                 })}
@@ -814,17 +814,17 @@ export default function CardModal({
 
           {/* ── TAB: Hạn hoàn thành ────────────────────────────────────────── */}
           {tab === "due" && (
-            <div className="bg-gray-800 rounded-xl p-3 space-y-3">
-              <p className="text-xs text-gray-400 font-medium">Đặt hạn hoàn thành</p>
+            <div className="bg-bg-elevated rounded-xl p-3 space-y-3">
+              <p className="text-xs text-text-muted font-medium">Đặt hạn hoàn thành</p>
               <input type="date" value={dueDateInput} onChange={e => setDueDateInput(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 scheme-dark"
+                className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent scheme-dark"
               />
               <div className="flex gap-2">
-                <button onClick={handleSaveDueDate} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium py-2 rounded-lg transition-colors">
+                <button onClick={handleSaveDueDate} className="flex-1 bg-accent hover:bg-accent-hover text-accent-text text-xs font-medium py-2 rounded-lg transition-colors cursor-pointer">
                   Lưu hạn
                 </button>
                 {localCard.dueDate && (
-                  <button onClick={handleClearDueDate} className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs transition-colors">
+                  <button onClick={handleClearDueDate} className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-secondary text-xs transition-colors cursor-pointer">
                     Xóa hạn
                   </button>
                 )}
@@ -840,18 +840,18 @@ export default function CardModal({
                   onChange={e => setNewChecklistTitle(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") handleCreateChecklist(); }}
                   placeholder="Tên checklist mới..."
-                  className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 rounded-lg outline-none focus:border-purple-500 transition-colors"
+                  className="flex-1 bg-bg-elevated border border-border-default text-text-primary text-sm px-3 py-2 rounded-lg outline-none focus:border-accent transition-colors cursor-text"
                 />
                 <button onClick={handleCreateChecklist} disabled={!newChecklistTitle.trim()}
-                  className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                  className="flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium px-3 py-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
                   <Plus className="w-4 h-4" /> Tạo
                 </button>
               </div>
-              {!checklistsLoaded && <p className="text-xs text-gray-500 text-center py-2">Đang tải checklist...</p>}
+              {!checklistsLoaded && <p className="text-xs text-text-muted text-center py-2">Đang tải checklist...</p>}
               {checklistsLoaded && checklists.length === 0 && (
-                <div className="text-center py-6 border border-dashed border-gray-700 rounded-xl">
-                  <ListChecks className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">Chưa có checklist nào. Tạo checklist đầu tiên ở ô phía trên.</p>
+                <div className="text-center py-6 border border-dashed border-border-default rounded-xl">
+                  <ListChecks className="w-6 h-6 text-text-disabled mx-auto mb-2" />
+                  <p className="text-xs text-text-muted">Chưa có checklist nào. Tạo checklist đầu tiên ở ô phía trên.</p>
                 </div>
               )}
               {checklists.map(cl => {
@@ -861,46 +861,46 @@ export default function CardModal({
                 const isComplete = total > 0 && done === total;
                 const draft = newItemTitleFor[cl.id] ?? "";
                 return (
-                  <div key={cl.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3 space-y-3">
+                  <div key={cl.id} className="bg-bg-elevated border border-border-default rounded-xl p-3 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-white truncate">{cl.title}</p>
-                      <button onClick={() => handleDeleteChecklist(cl.id)} className="text-gray-500 hover:text-red-400 p-1 shrink-0 transition-colors">
+                      <button onClick={() => handleDeleteChecklist(cl.id)} className="text-text-muted hover:text-danger p-1 shrink-0 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xs font-medium text-gray-400 w-9 shrink-0 tabular-nums">{pct}%</span>
-                      <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <span className="text-xs font-medium text-text-muted w-9 shrink-0 tabular-nums">{pct}%</span>
+                      <div className="flex-1 h-2 bg-bg-hover rounded-full overflow-hidden">
                         <div
-                          className={"h-full rounded-full transition-all duration-300 " + (isComplete ? "bg-green-500" : "bg-purple-500")}
+                          className={"h-full rounded-full transition-all duration-300 " + (isComplete ? "bg-accent" : "bg-accent/60")}
                           style={{ width: pct + "%" }}
                           role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 shrink-0 tabular-nums">{done}/{total}</span>
+                      <span className="text-xs text-text-muted shrink-0 tabular-nums">{done}/{total}</span>
                     </div>
                     <div className="space-y-1">
                       {cl.items.map(item => (
                         <div key={item.id}
-                          className={"flex items-center gap-2.5 group rounded-lg px-2 py-1.5 transition-colors " + (item.isDone ? "bg-gray-700/40" : "hover:bg-gray-700/40")}
+                          className={"flex items-center gap-2.5 group rounded-lg px-2 py-1.5 transition-colors " + (item.isDone ? "bg-bg-active" : "hover:bg-bg-hover/40")}
                         >
                           <button onClick={() => handleToggleItem(cl.id, item.id)}
-                            className={"rounded-full border flex items-center justify-center shrink-0 transition-colors " + (item.isDone ? "bg-purple-600 border-purple-600" : "border-gray-600 hover:border-purple-400")}
+                            className={"rounded-full border flex items-center justify-center shrink-0 transition-colors " + (item.isDone ? "bg-accent border-accent" : "border-border-strong hover:border-accent")}
                             style={{ width: 18, height: 18 }}
                           >
                             {item.isDone && <Check className="w-3 h-3 text-white" />}
                           </button>
-                          <span className={"text-xs flex-1 " + (item.isDone ? "text-gray-500 line-through" : "text-gray-200")}>
+                          <span className={"text-xs flex-1 " + (item.isDone ? "text-text-muted line-through" : "text-text-secondary")}>
                             {item.title}
                           </span>
                           <button onClick={() => handleDeleteItem(cl.id, item.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-opacity shrink-0">
+                            className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-danger transition-opacity shrink-0">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
                       {total === 0 && (
-                        <p className="text-[11px] text-gray-600 italic px-2 py-1">Chưa có việc phụ nào — thêm việc đầu tiên bên dưới.</p>
+                        <p className="text-[11px] text-text-disabled italic px-2 py-1">Chưa có việc phụ nào — thêm việc đầu tiên bên dưới.</p>
                       )}
                     </div>
                     <div className="flex gap-1.5">
@@ -908,10 +908,10 @@ export default function CardModal({
                         onChange={e => setNewItemTitleFor(prev => ({ ...prev, [cl.id]: e.target.value }))}
                         onKeyDown={e => { if (e.key === "Enter") handleAddItem(cl.id); }}
                         placeholder="Thêm việc phụ..."
-                        className="flex-1 bg-gray-700 text-white text-xs px-2.5 py-1.5 rounded-lg outline-none border border-gray-600 focus:border-purple-500 transition-colors"
+                        className="flex-1 bg-bg-hover text-text-primary text-xs px-2.5 py-1.5 rounded-lg outline-none border border-border-strong focus:border-accent transition-colors cursor-text"
                       />
                       <button onClick={() => handleAddItem(cl.id)} disabled={!draft.trim()}
-                        className="flex items-center gap-1 text-purple-400 hover:text-purple-300 text-xs px-2.5 py-1.5 rounded-lg border border-transparent hover:border-purple-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                        className="flex items-center gap-1 text-accent hover:text-accent/80 text-xs px-2.5 py-1.5 rounded-lg border border-transparent hover:border-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                         <Plus className="w-3.5 h-3.5" /> Thêm
                       </button>
                     </div>
@@ -923,28 +923,28 @@ export default function CardModal({
 
           {/* ── TAB: Bình luận ─────────────────────────────────────────────── */}
           {tab === "comments" && (
-            <div className="bg-gray-800 rounded-xl p-3 space-y-3">
+            <div className="bg-bg-elevated rounded-xl p-3 space-y-3">
               <div className="flex items-start gap-2">
-                <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0">M</div>
+                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-xs text-accent-text font-bold shrink-0">M</div>
                 <div className="flex-1 space-y-1.5 relative">
                   <textarea ref={commentRef} rows={2} value={newComment}
                     onChange={(e) => handleSlashInput(e, "comment")}
                     onKeyDown={(e) => { handleSlashKeyDown(e); if (e.key === "Enter" && !e.shiftKey && !slashVisible) { e.preventDefault(); handleAddComment(); } }}
                     placeholder="Viết bình luận... (gõ / để mở lệnh nhanh)"
-                    className="w-full bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg outline-none border border-gray-600 focus:border-purple-500 resize-none"
+                    className="w-full bg-bg-hover text-text-primary text-xs px-2 py-1.5 rounded-lg outline-none border border-border-strong focus:border-accent resize-none"
                   />
                   {slashVisible && slashSource === "comment" && (
-                    <div className="absolute left-0 bottom-full mb-1 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl py-1 w-64">
+                    <div className="absolute left-0 bottom-full mb-1 z-50 bg-bg-elevated border border-border-default rounded-xl shadow-lg py-1 w-64">
                       {filteredSlashCmds.length === 0 ? (
-                        <p className="text-xs text-gray-500 px-3 py-2">Không có lệnh nào khớp</p>
+                        <p className="text-xs text-text-muted px-3 py-2">Không có lệnh nào khớp</p>
                       ) : (
                         filteredSlashCmds.map((cmd, i) => (
                           <button key={cmd.name} onClick={() => executeSlashCommand(cmd.name)}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-purple-600/20 text-purple-300" : "text-gray-300 hover:bg-gray-700"}`}>
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${i === slashIndex ? "bg-accent-subtle text-accent" : "text-text-secondary hover:bg-bg-hover"}`}>
                             <span className="text-base">{cmd.icon}</span>
                             <div>
                               <span className="font-medium">/{cmd.name}</span>
-                              <span className="text-gray-500 ml-1.5">{cmd.description}</span>
+                              <span className="text-text-muted ml-1.5">{cmd.description}</span>
                             </div>
                           </button>
                         ))
@@ -953,44 +953,44 @@ export default function CardModal({
                   )}
                   <div className="flex justify-end">
                     <button onClick={handleAddComment} disabled={!newComment.trim()}
-                      className="text-xs text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                      className="text-xs text-accent hover:text-accent/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
                       Gửi bình luận
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2.5 max-h-64 overflow-y-auto pt-2 border-t border-gray-700">
-                {!activitiesLoaded && <p className="text-xs text-gray-500">Đang tải...</p>}
+              <div className="space-y-2.5 max-h-64 overflow-y-auto pt-2 border-t border-border-default">
+                {!activitiesLoaded && <p className="text-xs text-text-muted">Đang tải...</p>}
                 {activitiesLoaded && activities.length === 0 && (
-                  <p className="text-xs text-gray-500">Chưa có bình luận hay hoạt động nào.</p>
+                  <p className="text-xs text-text-muted">Chưa có bình luận hay hoạt động nào.</p>
                 )}
                 {activities.map(a =>
                   a.type === "COMMENT" ? (
                     <div key={a.id} className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs text-accent-text font-bold shrink-0 mt-0.5">
                         {a.user.name[0].toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-xs font-medium text-white">{a.user.name}</span>
-                          <span className="text-[11px] text-gray-600">{new Date(a.createdAt).toLocaleString("vi-VN")}</span>
+                          <span className="text-xs font-medium text-text-primary">{a.user.name}</span>
+                          <span className="text-[11px] text-text-disabled">{new Date(a.createdAt).toLocaleString("vi-VN")}</span>
                         </div>
-                        <p className="text-xs text-gray-200 bg-gray-700/60 rounded-lg px-2.5 py-1.5 mt-1 inline-block">{a.message}</p>
+                        <p className="text-xs text-text-secondary bg-bg-hover/60 rounded-lg px-2.5 py-1.5 mt-1 inline-block">{a.message}</p>
                       </div>
                       {a.user.id === currentUserId && (
-                        <button onClick={() => handleDeleteComment(a.id)} className="text-gray-600 hover:text-red-400 shrink-0">
+                        <button onClick={() => handleDeleteComment(a.id)} className="text-text-disabled hover:text-danger shrink-0">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       )}
                     </div>
                   ) : (
                     <div key={a.id} className="flex items-center gap-2 pl-1">
-                      <Clock className="w-3 h-3 text-gray-600 shrink-0" />
-                      <p className="text-[11px] text-gray-500 flex-1 min-w-0">
-                        <span className="font-medium text-gray-400">{a.user.name}</span>{" "}
+                      <Clock className="w-3 h-3 text-text-disabled shrink-0" />
+                      <p className="text-[11px] text-text-muted flex-1 min-w-0">
+                        <span className="font-medium text-text-muted">{a.user.name}</span>{" "}
                         <span className="italic">{a.message}</span>
                       </p>
-                      <span className="text-[10px] text-gray-700 shrink-0">{new Date(a.createdAt).toLocaleString("vi-VN")}</span>
+                      <span className="text-[10px] text-text-disabled shrink-0">{new Date(a.createdAt).toLocaleString("vi-VN")}</span>
                     </div>
                   )
                 )}
@@ -1000,37 +1000,37 @@ export default function CardModal({
 
           {/* ── TAB: Thời gian ─────────────────────────────────────────────── */}
           {tab === "time" && (
-            <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+            <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-0.5">Tổng thời gian</p>
-                  <p className="text-2xl font-bold text-white tabular-nums font-mono">{fmt(totalDisplay)}</p>
+                  <p className="text-[11px] text-text-muted uppercase tracking-wide mb-0.5">Tổng thời gian</p>
+                  <p className="text-2xl font-bold text-text-primary tabular-nums font-mono">{fmt(totalDisplay)}</p>
                 </div>
                 {runningId ? (
                   <button onClick={handleStopTimer}
-                    className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium px-4 py-2.5 rounded-xl border border-red-500/20 transition-colors">
-                    <Square className="w-4 h-4 fill-red-400" /> Dừng
+                    className="flex items-center gap-2 bg-danger-subtle hover:bg-danger/20 text-danger text-sm font-medium px-4 py-2.5 rounded-xl border border-danger-border transition-colors cursor-pointer">
+                    <Square className="w-4 h-4 fill-danger" /> Dừng
                   </button>
                 ) : (
                   <button onClick={handleStartTimer}
-                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
+                    className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium px-4 py-2.5 rounded-xl transition-colors cursor-pointer">
                     <Play className="w-4 h-4 fill-white" /> Bắt đầu
                   </button>
                 )}
               </div>
               {runningId && (
-                <div className="flex items-center gap-3 bg-gray-700/50 border border-gray-700 rounded-lg px-3 py-2">
-                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-                  <span className="text-xs text-gray-400">Phiên hiện tại</span>
-                  <span className="ml-auto text-sm font-bold text-white tabular-nums font-mono">{fmt(elapsed)}</span>
+                <div className="flex items-center gap-3 bg-bg-hover/50 border border-border-default rounded-lg px-3 py-2">
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
+                  <span className="text-xs text-text-muted">Phiên hiện tại</span>
+                  <span className="ml-auto text-sm font-bold text-text-primary tabular-nums font-mono">{fmt(elapsed)}</span>
                 </div>
               )}
-              <div className="border-t border-gray-700 pt-3 space-y-1.5 max-h-52 overflow-y-auto">
-                {!timeEntriesLoaded && <p className="text-xs text-gray-500">Đang tải...</p>}
+              <div className="border-t border-border-default pt-3 space-y-1.5 max-h-52 overflow-y-auto">
+                {!timeEntriesLoaded && <p className="text-xs text-text-muted">Đang tải...</p>}
                 {timeEntriesLoaded && timeEntries.length === 0 && (
                   <div className="text-center py-4">
-                    <Clock className="w-5 h-5 text-gray-600 mx-auto mb-1.5" />
-                    <p className="text-xs text-gray-500">Chưa có phiên nào được ghi nhận.</p>
+                    <Clock className="w-5 h-5 text-text-disabled mx-auto mb-1.5" />
+                    <p className="text-xs text-text-muted">Chưa có phiên nào được ghi nhận.</p>
                   </div>
                 )}
                 {timeEntries.map(e => {
@@ -1039,19 +1039,19 @@ export default function CardModal({
                     : elapsed;
                   return (
                     <div key={e.id} className="flex items-center gap-2.5 group">
-                      <div className="w-6 h-6 rounded-full bg-purple-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-accent/70 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                         {e.user.name[0].toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-300 truncate">
+                        <p className="text-xs text-text-secondary truncate">
                           {e.note ?? "Phiên làm việc"}
-                          {!e.endedAt && <span className="ml-1.5 text-green-400 font-medium">● đang chạy</span>}
+                          {!e.endedAt && <span className="ml-1.5 text-success font-medium">● đang chạy</span>}
                         </p>
-                        <p className="text-[10px] text-gray-600">{fmtDate(e.startedAt)}</p>
+                        <p className="text-[10px] text-text-disabled">{fmtDate(e.startedAt)}</p>
                       </div>
-                      <span className="text-xs text-gray-400 shrink-0 tabular-nums">{fmtHuman(sec)}</span>
+                      <span className="text-xs text-text-muted shrink-0 tabular-nums">{fmtHuman(sec)}</span>
                       <button onClick={() => handleDeleteTimeEntry(e.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-opacity shrink-0">
+                        className="opacity-0 group-hover:opacity-100 text-text-disabled hover:text-danger transition-opacity shrink-0">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -1063,15 +1063,15 @@ export default function CardModal({
 
           {/* ── TAB: Pomodoro (Zustand store — persist qua localStorage) ──── */}
           {tab === "pomodoro" && (
-            <div className="bg-gray-800 rounded-xl p-4 flex flex-col items-center gap-4">
+            <div className="bg-bg-elevated rounded-xl p-4 flex flex-col items-center gap-4">
 
               {/* Cảnh báo nếu store đang dùng bởi card khác */}
               {pomo.cardId && pomo.cardId !== card.id && (
-                <div className="w-full text-center text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2">
+                <div className="w-full text-center text-xs text-warning bg-warning-subtle border border-warning/20 rounded-lg px-3 py-2">
                   ⚠️ Đang có phiên Pomodoro chạy cho thẻ khác ({pomo.cardTitle})
                   <button
                     onClick={() => { pomo.forceAttachCard(card.id, card.title); }}
-                    className="ml-2 underline hover:text-amber-300"
+                    className="ml-2 underline hover:text-warning"
                   >
                     Dừng và dùng thẻ này
                   </button>
@@ -1081,8 +1081,8 @@ export default function CardModal({
               {/* Phase badge */}
               <span className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
                 pomo.phase === "work"
-                  ? "bg-purple-600/25 text-purple-300 border-purple-500/30"
-                  : "bg-green-600/25 text-green-300 border-green-500/30"
+                  ? "bg-accent-subtle text-accent border-accent/30"
+                  : "bg-success-subtle text-success border-success/30"
               }`}>
                 {pomo.phase === "work" ? "🎯 Tập trung" : "☕ Nghỉ ngơi"}
               </span>
@@ -1093,7 +1093,7 @@ export default function CardModal({
                   <circle cx="60" cy="60" r="54" fill="none" stroke="#374151" strokeWidth="8" />
                   <circle
                     cx="60" cy="60" r="54" fill="none"
-                    stroke={pomo.phase === "work" ? "#a855f7" : "#22c55e"}
+                    stroke={pomo.phase === "work" ? "var(--accent)" : "var(--success)"}
                     strokeWidth="8" strokeLinecap="round"
                     strokeDasharray={pomoCirc}
                     strokeDashoffset={pomoCirc * (1 - pomoPct / 100)}
@@ -1101,8 +1101,8 @@ export default function CardModal({
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-white tabular-nums font-mono">{fmt(pomoRemaining)}</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">{pomoPct}%</span>
+                  <span className="text-3xl font-bold text-text-primary tabular-nums font-mono">{fmt(pomoRemaining)}</span>
+                  <span className="text-[10px] text-text-muted mt-0.5">{pomoPct}%</span>
                 </div>
               </div>
 
@@ -1110,32 +1110,32 @@ export default function CardModal({
               <div className="flex gap-2">
                 {pomo.running ? (
                   <button onClick={() => pomo.pause()}
-                    className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+                    className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-primary text-sm font-medium px-5 py-2.5 rounded-xl transition-colors cursor-pointer">
                     <Pause className="w-4 h-4" /> Tạm dừng
                   </button>
                 ) : (
                   <button
                     onClick={() => { pomo.attachCard(card.id, card.title); pomo.start(); }}
                     disabled={!canStart}
-                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium px-5 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <Play className="w-4 h-4 fill-white" />
                     {pomoRemaining < pomoTotal ? "Tiếp tục" : "Bắt đầu"}
                   </button>
                 )}
                 <button onClick={() => pomo.reset()}
-                  className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2.5 rounded-xl transition-colors">
+                  className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-secondary text-sm px-4 py-2.5 rounded-xl transition-colors cursor-pointer">
                   <RotateCcw className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Info */}
-              <div className="w-full border-t border-gray-700 pt-3 space-y-1">
-                <div className="flex justify-between text-xs text-gray-500">
+              <div className="w-full border-t border-border-default pt-3 space-y-1">
+                <div className="flex justify-between text-xs text-text-muted">
                   <span>Tổng thời gian ghi nhận</span>
-                  <span className="text-white font-medium tabular-nums">{fmtHuman(totalSaved)}</span>
+                  <span className="text-text-primary font-medium tabular-nums">{fmtHuman(totalSaved)}</span>
                 </div>
-                <p className="text-[11px] text-gray-600 text-center pt-1">
+                <p className="text-[11px] text-text-muted text-center pt-1">
                   Đóng modal không mất timer — mini timer sẽ nổi ở góc màn hình.
                 </p>
               </div>
@@ -1144,11 +1144,11 @@ export default function CardModal({
 
           {/* ── TAB: Lặp lại ──────────────────────────────────────────────── */}
           {tab === "recurring" && (
-            <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+            <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-white font-semibold">Tự động lặp lại thẻ này</p>
-                  <p className="text-[11px] text-gray-500">Tạo bản sao thẻ định kỳ hàng ngày, tuần hoặc tháng</p>
+                  <p className="text-xs text-text-primary font-semibold">Tự động lặp lại thẻ này</p>
+                  <p className="text-[11px] text-text-muted">Tạo bản sao thẻ định kỳ hàng ngày, tuần hoặc tháng</p>
                 </div>
                 <button
                   type="button"
@@ -1160,20 +1160,20 @@ export default function CardModal({
                       setNextRecurInput(tomorrow.toISOString().split("T")[0]);
                     }
                   }}
-                  className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-300 ${isRecur ? "bg-purple-600 justify-end" : "bg-gray-700 justify-start"}`}
+                  className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-300 ${isRecur ? "bg-accent justify-end" : "bg-bg-hover justify-start"}`}
                 >
                   <span className="w-5 h-5 rounded-full bg-white shadow-md block" />
                 </button>
               </div>
 
               {isRecur && (
-                <div className="space-y-3 pt-2 border-t border-gray-700">
+                <div className="space-y-3 pt-2 border-t border-border-default">
                   <div>
-                    <label className="text-xs text-gray-400 font-medium mb-1.5 block">Chu kỳ lặp</label>
+                    <label className="text-xs text-text-muted font-medium mb-1.5 block">Chu kỳ lặp</label>
                     <select
                       value={recurInterval}
                       onChange={(e) => setRecurInterval(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                      className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-xs text-text-primary outline-none focus:border-accent"
                     >
                       <option value="DAILY">Hàng ngày (Daily)</option>
                       <option value="WEEKLY">Hàng tuần (Weekly)</option>
@@ -1182,12 +1182,12 @@ export default function CardModal({
                   </div>
 
                   <div>
-                    <label className="text-xs text-gray-400 font-medium mb-1.5 block">Ngày bắt đầu lặp tiếp theo</label>
+                    <label className="text-xs text-text-muted font-medium mb-1.5 block">Ngày bắt đầu lặp tiếp theo</label>
                     <input
                       type="date"
                       value={nextRecurInput}
                       onChange={(e) => setNextRecurInput(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500 scheme-dark"
+                      className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-xs text-text-primary outline-none focus:border-accent scheme-dark"
                     />
                   </div>
                 </div>
@@ -1197,13 +1197,13 @@ export default function CardModal({
 
           {/* ── TAB: Liên kết phụ thuộc ────────────────────────────────────── */}
           {tab === "dependencies" && (
-            <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+            <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
               <div>
-                <p className="text-xs text-white font-semibold mb-1">Thẻ đang bị khóa bởi (Blockers)</p>
-                <p className="text-[11px] text-gray-500 mb-3">Các thẻ này cần hoàn thành trước khi thẻ này được làm</p>
+                <p className="text-xs text-text-primary font-semibold mb-1">Thẻ đang bị khóa bởi (Blockers)</p>
+                <p className="text-[11px] text-text-muted mb-3">Các thẻ này cần hoàn thành trước khi thẻ này được làm</p>
 
                 {dependencies.length === 0 ? (
-                  <p className="text-xs text-gray-500 italic py-2">Chưa có liên kết phụ thuộc nào.</p>
+                  <p className="text-xs text-text-muted italic py-2">Chưa có liên kết phụ thuộc nào.</p>
                 ) : (
                   <div className="space-y-2">
                     {dependencies.map((dep) => {
@@ -1211,18 +1211,18 @@ export default function CardModal({
                                           dep.dependsOn.list.title.toLowerCase().includes("hoàn thành") || 
                                           dep.dependsOn.list.title.toLowerCase().includes("thành công");
                       return (
-                        <div key={dep.dependsOnId} className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs">
+                        <div key={dep.dependsOnId} className="flex items-center justify-between bg-bg-surface border border-border-default rounded-lg px-3 py-2 text-xs">
                           <div className="min-w-0 flex-1">
-                            <p className="text-white font-medium truncate">{dep.dependsOn.title}</p>
-                            <p className="text-[10px] text-gray-500 truncate">Danh sách: {dep.dependsOn.list.title}</p>
+                            <p className="text-text-primary font-medium truncate">{dep.dependsOn.title}</p>
+                            <p className="text-[10px] text-text-muted truncate">Danh sách: {dep.dependsOn.list.title}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isCompleted ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isCompleted ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning"}`}>
                               {isCompleted ? "Hoàn thành" : "Chưa xong"}
                             </span>
                             <button
                               onClick={() => handleRemoveDep(dep.dependsOnId)}
-                              className="text-gray-500 hover:text-red-400 p-1"
+                              className="text-text-muted hover:text-danger p-1"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -1234,14 +1234,14 @@ export default function CardModal({
                 )}
               </div>
 
-              <div className="border-t border-gray-700 pt-3">
-                <label className="text-xs text-gray-400 font-medium mb-1.5 block">Thêm thẻ chặn (Blocker)</label>
+              <div className="border-t border-border-default pt-3">
+                <label className="text-xs text-text-muted font-medium mb-1.5 block">Thêm thẻ chặn (Blocker)</label>
                 <input
                   type="text"
                   placeholder="Tìm kiếm thẻ chặn..."
                   value={depSearch}
                   onChange={(e) => setDepSearch(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500 mb-2"
+                  className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-xs text-text-primary outline-none focus:border-accent mb-2"
                 />
 
                 <div className="max-h-40 overflow-y-auto space-y-1">
@@ -1256,10 +1256,10 @@ export default function CardModal({
                       <button
                         key={candidate.id}
                         onClick={() => handleAddDep(candidate.id)}
-                        className="w-full text-left bg-gray-900/40 hover:bg-gray-700 border border-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300 transition-colors flex items-center justify-between"
+                        className="w-full text-left bg-bg-surface hover:bg-bg-hover border border-border-subtle rounded-lg px-3 py-2 text-xs text-text-secondary transition-colors flex items-center justify-between"
                       >
                         <span className="truncate">{candidate.title}</span>
-                        <span className="text-[10px] text-gray-500 font-normal shrink-0 ml-2">({candidate.list.title})</span>
+                        <span className="text-[10px] text-text-muted font-normal shrink-0 ml-2">({candidate.list.title})</span>
                       </button>
                     ))}
                 </div>
@@ -1270,11 +1270,11 @@ export default function CardModal({
           {/* Nút Lưu / Xóa */}
           <div className="flex gap-2 pt-1">
             <button onClick={handleSave}
-              className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
+              className="flex-1 bg-accent hover:bg-accent-hover text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer">
               <Check className="w-4 h-4" /> Lưu
             </button>
             <button onClick={handleDeleteCard}
-              className="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors flex items-center gap-2">
+              className="px-4 py-2.5 rounded-xl bg-danger-subtle hover:bg-danger-subtle-hover text-danger text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer">
               <Trash2 className="w-4 h-4" /> Xóa
             </button>
           </div>

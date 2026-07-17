@@ -36,7 +36,7 @@ export default function CreateWorkspaceModal({ onClose, onCreate }: CreateWorksp
     <Modal title="Tạo Workspace mới" onClose={onClose}>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Tên Workspace</label>
+          <label className="block text-xs font-medium text-text-muted mb-1.5">Tên Workspace</label>
           <input
             autoFocus
             type="text"
@@ -44,19 +44,19 @@ export default function CreateWorkspaceModal({ onClose, onCreate }: CreateWorksp
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             placeholder="VD: Team Marketing"
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500 transition-colors"
+            className="w-full bg-bg-hover border border-border-strong rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-disabled outline-none focus:border-accent transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-2">Màu sắc</label>
+          <label className="block text-xs font-medium text-text-muted mb-2">Màu sắc</label>
           <div className="flex gap-2 flex-wrap">
             {COLORS.map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
                 className={`w-8 h-8 rounded-lg bg-linear-to-br ${c} transition-transform hover:scale-110 ${
-                  color === c ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""
+                  color === c ? "ring-2 ring-white ring-offset-2 ring-offset-bg-app scale-110" : ""
                 }`}
               />
             ))}
@@ -66,7 +66,7 @@ export default function CreateWorkspaceModal({ onClose, onCreate }: CreateWorksp
         <button
           onClick={handleCreate}
           disabled={!name.trim() || loading}
-          className="w-full bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all"
+          className="w-full bg-accent hover:bg-accent-hover disabled:opacity-50 text-accent-text text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           {loading
             ? <Loader2 className="w-4 h-4 animate-spin" />

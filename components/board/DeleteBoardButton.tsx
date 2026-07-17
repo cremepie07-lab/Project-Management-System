@@ -35,7 +35,7 @@ export default function DeleteBoardButton({ boardId }: DeleteBoardButtonProps) {
     <button
       onClick={handleDelete}
       disabled={deleting}
-      className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all disabled:opacity-50"
+      className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-danger-subtle hover:bg-danger-subtle-hover text-danger border border-danger/20 transition-all disabled:opacity-50 cursor-pointer"
     >
       {deleting ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />

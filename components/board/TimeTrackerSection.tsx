@@ -286,15 +286,15 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
   // ─────────────────────────────────────────────────────────────────
 
   if (mode === "tracker") return (
-    <div className="bg-gray-800 rounded-xl p-4 space-y-4">
+    <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
 
       {/* Tổng thời gian */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-0.5">
+          <p className="text-[11px] text-text-muted uppercase tracking-wide mb-0.5">
             Tổng thời gian ghi nhận
           </p>
-          <p className="text-2xl font-bold text-white tabular-nums font-mono">
+          <p className="text-2xl font-bold text-text-primary tabular-nums font-mono">
             {fmt(totalDisplay)}
           </p>
         </div>
@@ -303,38 +303,38 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
         {runningId ? (
           <button
             onClick={handleStop}
-            className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium px-4 py-2.5 rounded-xl border border-red-500/20 transition-colors"
+            className="flex items-center gap-2 bg-danger-subtle hover:bg-danger-subtle-hover text-danger text-sm font-medium px-4 py-2.5 rounded-xl border border-danger/20 transition-colors cursor-pointer"
           >
-            <Square className="w-4 h-4 fill-red-400" /> Dừng
+            <Square className="w-4 h-4 fill-danger" /> Dừng
           </button>
         ) : (
           <button
             onClick={handleStart}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
           >
-            <Play className="w-4 h-4 fill-white" /> Bắt đầu
+            <Play className="w-4 h-4 fill-accent-text" /> Bắt đầu
           </button>
         )}
       </div>
 
       {/* Live timer strip khi đang chạy */}
       {runningId && (
-        <div className="flex items-center gap-3 bg-gray-700/50 border border-gray-700 rounded-lg px-3 py-2">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-          <span className="text-xs text-gray-400">Phiên hiện tại</span>
-          <span className="ml-auto text-sm font-bold text-white tabular-nums font-mono">
+        <div className="flex items-center gap-3 bg-bg-hover border border-border-default rounded-lg px-3 py-2">
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
+          <span className="text-xs text-text-muted">Phiên hiện tại</span>
+          <span className="ml-auto text-sm font-bold text-text-primary tabular-nums font-mono">
             {fmt(elapsed)}
           </span>
         </div>
       )}
 
       {/* Danh sách phiên */}
-      <div className="border-t border-gray-700 pt-3 space-y-1.5 max-h-52 overflow-y-auto">
-        {!loaded && <p className="text-xs text-gray-500">Đang tải...</p>}
+      <div className="border-t border-border-default pt-3 space-y-1.5 max-h-52 overflow-y-auto">
+        {!loaded && <p className="text-xs text-text-muted">Đang tải...</p>}
         {loaded && entries.length === 0 && (
           <div className="text-center py-4">
-            <Clock className="w-5 h-5 text-gray-600 mx-auto mb-1.5" />
-            <p className="text-xs text-gray-500">Chưa có phiên nào được ghi nhận.</p>
+            <Clock className="w-5 h-5 text-text-disabled mx-auto mb-1.5" />
+            <p className="text-xs text-text-muted">Chưa có phiên nào được ghi nhận.</p>
           </div>
         )}
         {entries.map((e) => {
@@ -343,24 +343,24 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
             : elapsed;
           return (
             <div key={e.id} className="flex items-center gap-2.5 group">
-              <div className="w-6 h-6 rounded-full bg-purple-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+              <div className="w-6 h-6 rounded-full bg-accent/70 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                 {e.user.name[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-300 truncate">
+                <p className="text-xs text-text-secondary truncate">
                   {e.note ?? "Phiên làm việc"}
                   {!e.endedAt && (
-                    <span className="ml-1.5 text-green-400 font-medium">● đang chạy</span>
+                    <span className="ml-1.5 text-success font-medium">● đang chạy</span>
                   )}
                 </p>
-                <p className="text-[10px] text-gray-600">{fmtDate(e.startedAt)}</p>
+                <p className="text-[10px] text-text-disabled">{fmtDate(e.startedAt)}</p>
               </div>
-              <span className="text-xs text-gray-400 shrink-0 tabular-nums">
+              <span className="text-xs text-text-muted shrink-0 tabular-nums">
                 {fmtHuman(sec)}
               </span>
               <button
                 onClick={() => handleRemoveEntry(e.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-opacity shrink-0"
+                className="opacity-0 group-hover:opacity-100 text-text-disabled hover:text-danger transition-opacity shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -373,14 +373,14 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
 
   // ── POMODORO MODE ────────────────────────────────────────────────
   return (
-    <div className="bg-gray-800 rounded-xl p-4 flex flex-col items-center gap-4">
+    <div className="bg-bg-elevated rounded-xl p-4 flex flex-col items-center gap-4">
 
       {/* Phase badge */}
       <div className="flex gap-2">
         <span className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
           pomoPhase === "work"
-            ? "bg-purple-600/25 text-purple-300 border border-purple-500/30"
-            : "bg-green-600/25 text-green-300 border border-green-500/30"
+            ? "bg-accent-subtle text-accent border border-accent/30"
+            : "bg-success-subtle text-success border border-success/30"
         }`}>
           {pomoPhase === "work" ? "🎯 Tập trung" : "☕ Nghỉ ngơi"}
         </span>
@@ -394,7 +394,7 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
           {/* Progress */}
           <circle
             cx="60" cy="60" r="54" fill="none"
-            stroke={pomoPhase === "work" ? "#a855f7" : "#22c55e"}
+            stroke={pomoPhase === "work" ? "var(--accent)" : "var(--success)"}
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={pomoCircumference}
@@ -404,10 +404,10 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
         </svg>
         {/* Countdown text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-white tabular-nums font-mono">
+          <span className="text-3xl font-bold text-text-primary tabular-nums font-mono">
             {fmt(pomoRemaining)}
           </span>
-          <span className="text-[10px] text-gray-500 mt-0.5">{pomoPct}%</span>
+          <span className="text-[10px] text-text-muted mt-0.5">{pomoPct}%</span>
         </div>
       </div>
 
@@ -416,21 +416,21 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
         {pomoRunning ? (
           <button
             onClick={handlePomoPause}
-            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-primary text-sm font-medium px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
           >
             <Pause className="w-4 h-4" /> Tạm dừng
           </button>
         ) : (
           <button
             onClick={handlePomoStart}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
           >
-            <Play className="w-4 h-4 fill-white" /> {pomoRemaining < (pomoPhase === "work" ? WORK_SEC : BREAK_SEC) ? "Tiếp tục" : "Bắt đầu"}
+            <Play className="w-4 h-4 fill-accent-text" /> {pomoRemaining < (pomoPhase === "work" ? WORK_SEC : BREAK_SEC) ? "Tiếp tục" : "Bắt đầu"}
           </button>
         )}
         <button
           onClick={handlePomoReset}
-          className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2.5 rounded-xl transition-colors"
+          className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-secondary text-sm px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
           title="Đặt lại"
         >
           <RotateCcw className="w-4 h-4" />
@@ -438,12 +438,12 @@ export default function TimeTrackerSection({ cardId, initialTotalSeconds = 0, mo
       </div>
 
       {/* Thông tin */}
-      <div className="w-full border-t border-gray-700 pt-3 space-y-1">
-        <div className="flex justify-between text-xs text-gray-500">
+      <div className="w-full border-t border-border-default pt-3 space-y-1">
+        <div className="flex justify-between text-xs text-text-muted">
           <span>Tổng thời gian ghi nhận</span>
-          <span className="text-white font-medium tabular-nums">{fmtHuman(totalSaved)}</span>
+          <span className="text-text-primary font-medium tabular-nums">{fmtHuman(totalSaved)}</span>
         </div>
-        <p className="text-[11px] text-gray-600 text-center pt-1">
+        <p className="text-[11px] text-text-disabled text-center pt-1">
           Hoàn thành phiên 25 phút → tự động lưu vào lịch sử thời gian của thẻ này.
         </p>
       </div>
