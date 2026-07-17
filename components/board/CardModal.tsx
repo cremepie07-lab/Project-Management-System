@@ -129,7 +129,7 @@ const PRESET_COLORS = [
   "#3b82f6","#8b5cf6","#ec4899","#14b8a6",
 ];
 
-type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies" | "attachments";
+type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies";
 
 // ─── Slash Commands ──────────────────────────────────────────────────────────
 
@@ -718,7 +718,6 @@ export default function CardModal({
               { key: "pomodoro",     icon: <Timer className="w-3.5 h-3.5" />,         label: "Pomodoro" },
               { key: "recurring",    icon: <Repeat className="w-3.5 h-3.5" />,        label: "Lặp lại" },
               { key: "dependencies", icon: <Link className="w-3.5 h-3.5" />,          label: "Liên kết" },
-              { key: "attachments", icon: <Paperclip className="w-3.5 h-3.5" />,    label: "Đính kèm" },
             ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
               <button key={t.key} onClick={() => setTab(tab === t.key ? null : t.key)}
                 className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors ${
@@ -734,6 +733,12 @@ export default function CardModal({
                 )}
               </button>
             ))}
+            <button
+              onClick={() => setShowAttachModal(true)}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border border-border-default text-text-muted hover:text-text-primary hover:border-border-strong transition-colors cursor-pointer"
+            >
+              <Paperclip className="w-3.5 h-3.5" /> Đính kèm
+            </button>
           </div>
 
           {/* ── TAB: Nhãn ──────────────────────────────────────────────────── */}
@@ -1273,10 +1278,8 @@ export default function CardModal({
             </div>
           )}
 
-          {/* ── TAB: Đính kèm ──────────────────────────────────────────────── */}
-          {tab === "attachments" && (
-            <AttachmentListInCard cardId={localCard.id} onOpenAttach={() => setShowAttachModal(true)} />
-          )}
+          {/* ── Đính kèm (luôn hiện khi có data) ──────────────────────────────── */}
+          <AttachmentListInCard cardId={localCard.id} onOpenAttach={() => setShowAttachModal(true)} />
 
           {/* Nút Lưu / Xóa */}
           <div className="flex gap-2 pt-1">

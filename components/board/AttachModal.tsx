@@ -63,6 +63,7 @@ export default function AttachModal({ cardId, onClose, onAttachmentsChange }: At
   const [inserting, setInserting] = useState(false);
   const [insertError, setInsertError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [hasUploadedFile, setHasUploadedFile] = useState(false);
 
   useEffect(() => {
     getAttachments(cardId).then((a) => {
@@ -81,6 +82,7 @@ export default function AttachModal({ cardId, onClose, onAttachmentsChange }: At
     if (result.error) throw new Error(result.error);
     if (result.attachment) {
       emitChange([result.attachment, ...attachments]);
+      setHasUploadedFile(true);
     }
   }
 
@@ -224,14 +226,30 @@ export default function AttachModal({ cardId, onClose, onAttachmentsChange }: At
           >
             Hủy
           </button>
-          <button
-            onClick={handleInsertLink}
-            disabled={!linkUrl.trim() || inserting}
-            className="px-4 py-2 text-xs font-medium bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
-            {inserting && <Loader2 className="w-3 h-3 animate-spin" />}
-            Chèn
-          </button>
+          {linkUrl.trim() ? (
+            <button
+              onClick={handleInsertLink}
+              disabled={inserting}
+              className="px-4 py-2 text-xs font-medium bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {inserting && <Loader2 className="w-3 h-3 animate-spin" />}
+              Chèn
+            </button>
+          ) : hasUploadedFile ? (
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-colors cursor-pointer"
+            >
+              Xong
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 text-xs font-medium bg-accent text-accent-text rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Chèn
+            </button>
+          )}
         </div>
       </div>
     </div>
