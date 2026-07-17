@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   // Lấy workspace + board thật từ DB
   const workspaces = await prisma.workspace.findMany({
     where: {
-      members: { some: { userId: session.userId } },
+      members: { some: { userId: session.userId, status: "ACCEPTED" } },
     },
     orderBy: { createdAt: "desc" },
     include: {

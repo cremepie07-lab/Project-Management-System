@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserPlus, Shield, User, Trash2, Loader2, Crown, Check, X } from "lucide-react";
-import { inviteMember, updateMemberRole, removeMember, leaveWorkspace, transferWorkspaceOwnership, deleteWorkspaceById } from "@/app/actions/workspace-members";
+import { inviteMember, updateMemberRole, removeMember, leaveWorkspace, transferWorkspaceOwnership, deleteWorkspaceById, revokeInvitation } from "@/app/actions/workspace-members";
 
 type Role = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -17,6 +17,7 @@ interface Member {
 interface MembersClientProps {
   workspace: { id: string; name: string };
   members: Member[];
+  pendingMembers: Member[];
   currentUserId: string;
   currentRole: Role;
 }
@@ -33,9 +34,10 @@ const ROLE_STYLES: Record<Role, string> = {
   MEMBER: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
 };
 
-export default function MembersClient({ workspace, members: init, currentUserId, currentRole }: MembersClientProps) {
+export default function MembersClient({ workspace, members: init, pendingMembers: initPending, currentUserId, currentRole }: MembersClientProps) {
   const router = useRouter();
   const [members, setMembers] = useState(init);
+  const [pendingMembers, setPendingMembers] = useState(initPending);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
@@ -55,16 +57,11 @@ export default function MembersClient({ workspace, members: init, currentUserId,
     setInviting(false);
 
     if (result.error) { setInviteError(result.error); return; }
-    if (result.success && result.user) {
-      setMembers((prev) => [...prev, {
-        id: Date.now().toString(),
-        role: "MEMBER",
-        userId: result.user!.id,
-        user: result.user!,
-      }]);
+    if (result.success) {
       setEmail("");
-      setInviteSuccess("Đã mời thành công!");
-      setTimeout(() => setInviteSuccess(""), 3000);
+      // Người dùng sẽ ở trạng thái PENDING cho đến khi xác nhận
+      setInviteSuccess("Đã gửi lời mời! Người dùng sẽ nhận được thông báo.");
+      setTimeout(() => setInviteSuccess(""), 5000);
     }
   }
 
@@ -271,7 +268,60 @@ export default function MembersClient({ workspace, members: init, currentUserId,
           </div>
         </div>
 
-        {/* ── SECTION 3: Danger zone ── */}
+        {/* ── SECTION 3: Pending Invitations ── */}
+        {canManage && pendingMembers.length > 0 && (
+          <div className="bg-white dark:bg-gray-900 border border-amber-200/60 dark:border-amber-500/20 rounded-3xl overflow-hidden shadow-xs">
+            <div className="px-5 py-4 border-b border-amber-100 dark:border-amber-500/10 bg-amber-50/50 dark:bg-amber-500/5">
+              <h2 className="text-sm font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
+                {pendingMembers.length} lời mời đang chờ xác nhận
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {pendingMembers.map((member) => (
+                <div key={member.id} className="flex items-center gap-3 px-5 py-4">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-gray-100 dark:border-gray-800 shadow-xs">
+                    {member.user.avatarUrl ? (
+                      <img src={member.user.avatarUrl} alt={member.user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold">
+                        {member.user.name[0].toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{member.user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.user.email}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/10 border border-amber-200/60 dark:border-amber-400/20 px-2 py-1 rounded-full whitespace-nowrap">
+                    Đang chờ
+                  </span>
+                  <button
+                    disabled={loadingId === member.userId}
+                    onClick={async () => {
+                      setLoadingId(member.userId);
+                      const result = await revokeInvitation(workspace.id, member.userId);
+                      setLoadingId(null);
+                      if (!result.error) {
+                        setPendingMembers((prev) => prev.filter((m) => m.userId !== member.userId));
+                      }
+                    }}
+                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all disabled:opacity-50 cursor-pointer"
+                    title="Thu hồi lời mời"
+                  >
+                    {loadingId === member.userId ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTION 4: Danger zone ── */}
         {isOwner && members.length === 1 && (
           <div className="bg-red-50/10 dark:bg-red-950/5 border border-red-200 dark:border-red-500/20 rounded-3xl p-5 space-y-3 shadow-xs">
             <div className="flex items-center gap-2">

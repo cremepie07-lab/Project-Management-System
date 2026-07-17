@@ -22,7 +22,9 @@ export default async function SettingsPage({
 
   if (!workspace) redirect("/dashboard");
 
-  const currentMember = workspace.members.find((m) => m.userId === session.userId);
+  const currentMember = workspace.members.find(
+    (m) => m.userId === session.userId && m.status === "ACCEPTED"
+  );
   if (!currentMember) redirect("/dashboard");
 
   return (

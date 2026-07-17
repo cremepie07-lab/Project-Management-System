@@ -25,15 +25,22 @@ export default async function MembersPage({
 
   if (!workspace) redirect("/dashboard");
 
-  const currentMember = workspace.members.find((m) => m.userId === session.userId);
+  // Block PENDING members from accessing the members page
+  const currentMember = workspace.members.find(
+    (m) => m.userId === session.userId && m.status === "ACCEPTED"
+  );
   if (!currentMember) redirect("/dashboard");
 
+  const acceptedMembers = workspace.members.filter((m) => m.status === "ACCEPTED");
+  const pendingMembers = workspace.members.filter((m) => m.status === "PENDING");
+
   return (
-  <MembersClient
-    workspace={{ id: workspace.id, name: workspace.name }}
-    members={workspace.members}
-    currentUserId={session.userId}
-    currentRole={currentMember.role as "OWNER" | "ADMIN" | "MEMBER"}
-  />
-);
+    <MembersClient
+      workspace={{ id: workspace.id, name: workspace.name }}
+      members={acceptedMembers}
+      pendingMembers={pendingMembers}
+      currentUserId={session.userId}
+      currentRole={currentMember.role as "OWNER" | "ADMIN" | "MEMBER"}
+    />
+  );
 }

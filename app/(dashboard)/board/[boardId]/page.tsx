@@ -27,6 +27,7 @@ export default async function BoardPage({
       workspace: {
         include: {
           members: {
+            where: { status: "ACCEPTED" },
             include: { user: true },
           },
         },

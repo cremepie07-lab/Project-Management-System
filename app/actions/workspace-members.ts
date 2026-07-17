@@ -30,7 +30,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
   });
 }
 
-// Mời thành viên qua email
+// Mời thành viên qua email (tạo PENDING — cần xác nhận)
 export async function inviteMember(workspaceId: string, email: string) {
   const session = await requireSession();
   await assertAdminOrOwner(workspaceId, session.userId);
@@ -38,18 +38,123 @@ export async function inviteMember(workspaceId: string, email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return { error: "Không tìm thấy người dùng với email này" };
 
+  // Không thể mời chính mình
+  if (user.id === session.userId) return { error: "Bạn không thể mời chính mình" };
+
   const existing = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: user.id, workspaceId } },
   });
-  if (existing) return { error: "Người dùng đã là thành viên" };
+  if (existing) {
+    if (existing.status === "PENDING") {
+      return { error: "Đã có lời mời đang chờ xác nhận từ người này" };
+    }
+    return { error: "Người dùng đã là thành viên" };
+  }
 
+  // Lấy tên workspace để hiển thị trong notification
+  const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+  if (!workspace) return { error: "Không tìm thấy Workspace" };
+
+  // Tạo thành viên với trạng thái PENDING
   await prisma.workspaceMember.create({
-    data: { userId: user.id, workspaceId, role: "MEMBER" },
+    data: {
+      userId: user.id,
+      workspaceId,
+      role: "MEMBER",
+      status: "PENDING",
+      invitedBy: session.userId,
+      invitedAt: new Date(),
+    },
+  });
+
+  // Gửi thông báo đến người được mời
+  await prisma.notification.create({
+    data: {
+      userId: user.id,
+      title: "Lời mời tham gia Workspace",
+      message: `${session.name} đã mời bạn tham gia Workspace "${workspace.name}". Nhấn để xem và xác nhận.`,
+      linkUrl: `/workspace/${workspaceId}/invite`,
+    },
   });
 
   revalidatePath(`/workspace/${workspaceId}/members`);
   return { success: true, user };
 }
+
+// Chấp nhận lời mời vào workspace
+export async function acceptInvitation(workspaceId: string) {
+  const session = await requireSession();
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+  if (!membership || membership.status !== "PENDING") {
+    return { error: "Không tìm thấy lời mời" };
+  }
+
+  await prisma.workspaceMember.update({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+    data: { status: "ACCEPTED" },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/workspace/${workspaceId}/members`);
+  return { success: true };
+}
+
+// Từ chối lời mời vào workspace
+export async function declineInvitation(workspaceId: string) {
+  const session = await requireSession();
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+  if (!membership || membership.status !== "PENDING") {
+    return { error: "Không tìm thấy lời mời" };
+  }
+
+  await prisma.workspaceMember.delete({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// Thu hồi lời mời (Owner/Admin thu hồi)
+export async function revokeInvitation(workspaceId: string, targetUserId: string) {
+  const session = await requireSession();
+  await assertAdminOrOwner(workspaceId, session.userId);
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+  });
+  if (!membership || membership.status !== "PENDING") {
+    return { error: "Không tìm thấy lời mời đang chờ" };
+  }
+
+  await prisma.workspaceMember.delete({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+  });
+
+  revalidatePath(`/workspace/${workspaceId}/members`);
+  return { success: true };
+}
+
+// Lấy danh sách thành viên đã xác nhận + pending (dùng trong settings/members page)
+export async function getWorkspaceMembersWithPending(workspaceId: string) {
+  await requireSession();
+  const all = await prisma.workspaceMember.findMany({
+    where: { workspaceId },
+    include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  return {
+    accepted: all.filter((m) => m.status === "ACCEPTED"),
+    pending: all.filter((m) => m.status === "PENDING"),
+  };
+}
+
 
 // Đổi quyền thành viên
 export async function updateMemberRole(
