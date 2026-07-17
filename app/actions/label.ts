@@ -56,7 +56,14 @@ export async function toggleCardMember(cardId: string, userId: string) {
           title: true,
           list: {
             select: {
-              boardId: true,
+              title: true,
+              board: {
+                select: {
+                  id: true,
+                  title: true,
+                  workspace: { select: { name: true } },
+                },
+              },
             },
           },
         },
@@ -65,9 +72,13 @@ export async function toggleCardMember(cardId: string, userId: string) {
         await prisma.notification.create({
           data: {
             userId,
-            title: "Nhiệm vụ mới được giao",
+            type: "self_assigned",
             message: `${session.name} đã gán thẻ "${card.title}" cho bạn.`,
-            linkUrl: `/board/${card.list.boardId}`,
+            cardId,
+            cardTitle: card.title,
+            boardId: card.list.board.id,
+            workspaceName: card.list.board.workspace.name,
+            listName: card.list.title,
           },
         });
       }
