@@ -2,7 +2,7 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/dashboard/DashboardClient";
-
+import UpNextSection from "@/components/dashboard/UpNextSection";
 import { processRecurringCards } from "@/app/actions/recurring";
 
 export default async function DashboardPage() {
@@ -23,57 +23,19 @@ export default async function DashboardPage() {
     },
   });
 
-  // Lấy danh sách thẻ được giao cho người dùng hiện tại
-  const cardMemberships = await prisma.cardMember.findMany({
-    where: {
-      userId: session.userId,
-    },
-    include: {
-      card: {
-        include: {
-          list: {
-            include: {
-              board: {
-                include: {
-                  workspace: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      card: {
-        updatedAt: "desc",
-      },
-    },
-    take: 5,
-  });
-
-  const assignedCards = cardMemberships.map((m) => ({
-    id: m.card.id,
-    title: m.card.title,
-    listName: m.card.list.title,
-    boardName: m.card.list.board.title,
-    workspaceName: m.card.list.board.workspace.name,
-    updatedAt: m.card.updatedAt.toISOString(),
-    actionText: "Bạn đã được phân công vào thẻ này",
-    userAvatar: session.avatarUrl ?? null,
-    userName: session.name,
-  }));
-
   return (
     <DashboardClient
       name={session.name}
       email={session.email}
       avatarUrl={session.avatarUrl ?? null}
-      assignedCards={assignedCards}
+      // UpNextSection là Server Component — truyền như ReactNode để tránh
+      // lỗi "next/headers trong Client Component"
+      upNextSection={<UpNextSection />}
       initialWorkspaces={workspaces.map((ws) => ({
         id: ws.id,
         name: ws.name,
         slug: ws.slug,
-        color: "from-purple-600 to-blue-600", // TODO: thêm field color vào schema sau
+        color: "from-purple-600 to-blue-600",
         boards: ws.boards.map((b) => ({
           id: b.id,
           title: b.title,

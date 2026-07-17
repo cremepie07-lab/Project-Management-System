@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Star, Clock, Search, Menu, Settings, Users, Eye, MoreHorizontal, MessageSquare, X } from "lucide-react";
+import { Plus, Star, Clock, Search, Menu, Settings, Users } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BoardCard from "@/components/dashboard/BoardCard";
 import CreateWorkspaceModal from "@/components/dashboard/CreateWorkspaceModal";
@@ -28,27 +28,15 @@ interface Workspace {
   boards: Board[];
 }
 
-interface AssignedCard {
-  id: string;
-  title: string;
-  listName: string;
-  boardName: string;
-  workspaceName: string;
-  updatedAt: string;
-  actionText?: string;
-  userAvatar?: string | null;
-  userName?: string;
-}
-
 interface DashboardClientProps {
   name: string;
   email: string;
   avatarUrl: string | null;
   initialWorkspaces: Workspace[];
-  assignedCards?: AssignedCard[];
+  upNextSection?: React.ReactNode;
 }
 
-export default function DashboardClient({ name, email, avatarUrl, initialWorkspaces, assignedCards = [] }: DashboardClientProps) {
+export default function DashboardClient({ name, email, avatarUrl, initialWorkspaces, upNextSection }: DashboardClientProps) {
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWsId, setActiveWsId] = useState(initialWorkspaces[0]?.id ?? "");
@@ -181,122 +169,8 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
             </div>
           </section>
 
-          {/* ── SẮP TỚI: FEED THÔNG BÁO ── */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2.5 mb-3.5 px-1">
-              <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sắp tới</h2>
-            </div>
-            
-            <div className="flex flex-col gap-4 max-w-xl">
-              {((assignedCards && assignedCards.length > 0) ? assignedCards.map(c => {
-                // Tính thời gian tương đối
-                let timeAgo = "Vừa xong";
-                try {
-                  const now = new Date();
-                  const date = new Date(c.updatedAt);
-                  const diffMs = now.getTime() - date.getTime();
-                  const diffMins = Math.floor(diffMs / 60000);
-                  const diffHours = Math.floor(diffMins / 60);
-                  const diffDays = Math.floor(diffHours / 24);
-
-                  if (diffMins < 1) timeAgo = "Vừa xong";
-                  else if (diffMins < 60) timeAgo = `${diffMins} phút trước`;
-                  else if (diffHours < 24) timeAgo = `${diffHours} giờ trước`;
-                  else timeAgo = `${diffDays} ngày trước`;
-                } catch (_) {}
-
-                return { ...c, timeAgo };
-              }) : [
-                {
-                  id: "mock-1",
-                  title: "Thiết kế UI/UX hệ thống quản lý công việc",
-                  listName: "Cần làm",
-                  boardName: "Dự án mới",
-                  workspaceName: "minh",
-                  actionText: "đã tự thêm mình vào",
-                  userName: name,
-                  userAvatar: avatarUrl,
-                  timeAgo: "2 ngày trước",
-                },
-                {
-                  id: "mock-2",
-                  title: "Tích hợp API và viết Unit Test cho Auth",
-                  listName: "Đang làm",
-                  boardName: "Core App",
-                  workspaceName: "minh",
-                  actionText: "đã được phân công vào thẻ này",
-                  userName: name,
-                  userAvatar: avatarUrl,
-                  timeAgo: "5 ngày trước",
-                }
-              ]).map((card) => (
-                <div 
-                  key={card.id}
-                  className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xs hover:shadow-sm transition-all duration-200 overflow-hidden flex flex-col group/feed"
-                >
-                  {/* Header gradient banner */}
-                  <div className="bg-gradient-to-r from-violet-500 to-blue-400 px-4 py-3 flex items-center justify-between text-white select-none">
-                    <span className="font-semibold text-xs tracking-wide truncate max-w-[70%] drop-shadow-xs">
-                      {card.title}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-3.5 h-3.5 text-white/80 hover:text-white cursor-pointer transition-colors" />
-                      <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 border border-white/20 flex items-center justify-center text-[9px] font-bold text-white shrink-0 select-none">
-                        {card.userName ? card.userName[0].toUpperCase() : "M"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Body content */}
-                  <div className="p-4 space-y-3.5">
-                    {/* Breadcrumb nhỏ chữ xám */}
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wide uppercase">
-                      {card.workspaceName} | {card.userName || "Thành viên"}: {card.listName}
-                    </div>
-
-                    {/* Nội dung chi tiết */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        {card.userAvatar ? (
-                          <img 
-                            src={card.userAvatar} 
-                            alt={card.userName || "Avatar"} 
-                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100 dark:border-slate-800 shadow-xs" 
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">
-                            {card.userName ? card.userName[0].toUpperCase() : "U"}
-                          </div>
-                        )}
-                        <div className="text-xs text-slate-600 dark:text-slate-350">
-                          <span className="font-semibold text-slate-900 dark:text-white">Bạn</span> {card.actionText || "đã thực hiện hành động"}
-                          <span className="block text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{card.timeAgo}</span>
-                        </div>
-                      </div>
-
-                      {/* Options menu button */}
-                      <button className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Action buttons matching Thêm Board style */}
-                    <div className="flex gap-2.5 pt-1.5">
-                      <button className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-98 transition-all duration-150 cursor-pointer select-none">
-                        <MessageSquare className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-                        Trả lời
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-98 transition-all duration-150 cursor-pointer select-none">
-                        <X className="w-3.5 h-3.5" />
-                        Bỏ qua
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* ── SẮP TỚI: Server Component truyền từ page.tsx ── */}
+          {upNextSection}
 
           {workspaces.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xs max-w-lg mx-auto">

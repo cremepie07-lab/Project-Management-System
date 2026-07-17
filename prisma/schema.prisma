@@ -254,15 +254,30 @@ model CardMember {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  linkUrl   String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Structured feed fields
+  type          String   @default("system") // "self_assigned" | "mention" | "due_date" | "comment" | "invite" | "system"
+  message       String
+  cardId        String?
+  cardTitle     String?
+  boardId       String?
+  workspaceName String?
+  listName      String?
+
+  // State
+  isDismissed   Boolean  @default(false)
+  isRead        Boolean  @default(false)
+
+  // Legacy fields (kept for backward compatibility)
+  title         String   @default("")
+  linkUrl       String?
+
+  createdAt     DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, isDismissed])
   @@map("notifications")
 }

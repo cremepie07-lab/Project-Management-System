@@ -71,8 +71,10 @@ export async function inviteMember(workspaceId: string, email: string) {
   await prisma.notification.create({
     data: {
       userId: user.id,
+      type: "invite",
       title: "Lời mời tham gia Workspace",
       message: `${session.name} đã mời bạn tham gia Workspace "${workspace.name}". Nhấn để xem và xác nhận.`,
+      workspaceName: workspace.name,
       linkUrl: `/workspace/${workspaceId}/invite`,
     },
   });
