@@ -22,6 +22,7 @@ import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES } from "@/lib/due-date
 import { formatDuration, sumTrackedSeconds } from "@/lib/time-format";
 import CardModal from "@/components/board/CardModal";
 import { usePomodoroStore } from "@/store/pomodoroStore";
+import { getContrastTextColor } from "@/lib/color-utils";
 
 // ── Types ──
 interface Label { id: string; name: string; color: string; }
@@ -94,7 +95,10 @@ function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick
       {card.cardLabels.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2.5">
           {card.cardLabels.map((cl) => (
-            <span key={cl.labelId} className="h-1.5 w-9 rounded-full" style={{ backgroundColor: cl.label.color }} />
+            <span key={cl.labelId} className="text-xs px-2 py-0.5 rounded-md font-semibold"
+              style={{ backgroundColor: cl.label.color, color: getContrastTextColor(cl.label.color) }}>
+              {cl.label.name}
+            </span>
           ))}
         </div>
       )}
@@ -183,7 +187,7 @@ function SortableList({ list, children, onDelete, onRename }: {
   const [title, setTitle] = useState(list.title);
 
   return (
-    <div ref={setNodeRef} style={style} className="shrink-0 w-68 bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl flex flex-col shadow-sm">
+    <div ref={setNodeRef} style={style} className="shrink-0 w-68 h-fit bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl flex flex-col shadow-sm">
       <div className="flex items-center gap-2 px-3 pt-3 pb-2.5">
         <GripVertical {...attributes} {...listeners} className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-grab shrink-0 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" />
         {editing ? (
@@ -439,8 +443,8 @@ export default function BoardClient({
   }
 
   return (
-    <>
-      <div className="flex items-center gap-3 px-4 pt-3">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-3 px-4 pt-3 shrink-0">
         <FilterBar
           boardLabels={boardLabels}
           workspaceMembers={workspaceMembers}
@@ -453,8 +457,10 @@ export default function BoardClient({
         {isFiltering && <span className="text-xs text-slate-500 dark:text-slate-400">Đang lọc — một số thẻ bị ẩn</span>}
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
-        <div className="flex gap-3.5 p-4 overflow-x-auto min-h-[calc(100vh-56px)] items-start">
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+        autoScroll={{ threshold: { x: 40, y: 40 }, acceleration: 10 }}>
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-3.5 p-4 h-full items-start">
           <SortableContext items={lists.map((l) => l.id)} strategy={horizontalListSortingStrategy}>
             {filteredLists.map((list) => (
               <SortableList key={list.id} list={list} onDelete={() => handleDeleteList(list.id)} onRename={(t) => handleRenameList(list.id, t)}>
@@ -489,7 +495,7 @@ export default function BoardClient({
           </SortableContext>
 
           {addingList ? (
-            <div className="shrink-0 w-68 bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl p-2.5 space-y-2 transition-colors duration-200">
+            <div className="shrink-0 w-68 self-start bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 backdrop-blur-sm rounded-xl p-2.5 space-y-2 transition-colors duration-200">
               <input autoFocus value={newListTitle} onChange={(e) => setNewListTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddList(); if (e.key === "Escape") setAddingList(false); }}
                 placeholder="Nhập tên cột..."
@@ -501,10 +507,11 @@ export default function BoardClient({
               </div>
             </div>
           ) : (
-            <button onClick={() => setAddingList(true)} className="shrink-0 w-68 h-11 bg-transparent hover:bg-slate-900/5 dark:hover:bg-white/5 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-2 border-dashed border-slate-400/40 dark:border-white/15 hover:border-slate-500/50 dark:hover:border-white/30 text-xs font-semibold transition-all duration-200 cursor-pointer">
+            <button onClick={() => setAddingList(true)} className="shrink-0 w-68 h-11 self-start bg-transparent hover:bg-slate-900/5 dark:hover:bg-white/5 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-2 border-dashed border-slate-400/40 dark:border-white/15 hover:border-slate-500/50 dark:hover:border-white/30 text-xs font-semibold transition-all duration-200 cursor-pointer">
               <Plus className="w-4 h-4" /> Thêm cột mới
             </button>
           )}
+          </div>
         </div>
 
         <DragOverlay>
@@ -534,6 +541,6 @@ export default function BoardClient({
           onLabelsChange={setBoardLabels}
         />
       )}
-    </>
+    </div>
   );
 }

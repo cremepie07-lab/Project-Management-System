@@ -78,7 +78,7 @@ export default async function BoardPage({
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center transition-all duration-300 relative board-page"
+      className="h-screen flex flex-col overflow-hidden bg-cover bg-center transition-all duration-300 relative board-page"
       style={{ background: bgStyle }}
     >
       {/* Light mode overlay — softens the always-dark board gradient */}
@@ -95,7 +95,7 @@ export default async function BoardPage({
         {isOwner && <DeleteBoardButton boardId={board.id} />}
       </header>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 min-h-0">
         <BoardClient
           boardId={board.id}
           initialLists={board.lists as any}

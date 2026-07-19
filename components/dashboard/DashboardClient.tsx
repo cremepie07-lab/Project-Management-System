@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Plus, Star, Clock, Search, Menu, Settings, Users } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BoardCard from "@/components/dashboard/BoardCard";
@@ -101,7 +102,7 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
           <Menu className="w-[18px] h-[18px]" />
         </button>
 
-        <img src="/logo.svg" alt="WorkFlow" className="h-6 w-auto object-contain shrink-0" />
+        <Image src="/logo.svg" alt="WorkFlow" width={24} height={24} className="h-6 w-auto object-contain shrink-0" />
 
         <div className="flex-1 max-w-md mx-4">
           <div className="relative">

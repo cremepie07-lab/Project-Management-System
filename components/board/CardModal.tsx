@@ -21,6 +21,7 @@ import { usePomodoroStore, WORK_SEC, BREAK_SEC } from "@/store/pomodoroStore";
 import { addCardDependency, removeCardDependency, getBlockerCandidates } from "@/app/actions/dependency";
 import AttachModal from "./AttachModal";
 import AttachmentListInCard from "./AttachmentListInCard";
+import { getContrastTextColor } from "@/lib/color-utils";
 
 // ─── inline time helpers ─────────────────────────────────────────────────────
 
@@ -635,8 +636,8 @@ export default function CardModal({
                 </span>
               )}
               {localCard.cardLabels.map(cl => (
-                <span key={cl.labelId} className="text-xs px-2 py-0.5 rounded-full font-medium text-white"
-                  style={{ backgroundColor: cl.label.color }}>
+                <span key={cl.labelId} className="text-xs px-2 py-0.5 rounded-full font-medium"
+                  style={{ backgroundColor: cl.label.color, color: getContrastTextColor(cl.label.color) }}>
                   {cl.label.name}
                 </span>
               ))}
@@ -772,7 +773,7 @@ export default function CardModal({
                         }`}
                       >
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
-                        <span className="text-white">{label.name}</span>
+                        <span className="text-text-primary">{label.name}</span>
                         {localCard.cardLabels.some(cl => cl.labelId === label.id) && <Check className="w-3 h-3 text-accent ml-auto" />}
                       </button>
                       <button onClick={() => setEditingLabel(label)} className="text-text-muted hover:text-text-primary p-1"><Pencil className="w-3 h-3" /></button>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -59,8 +60,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        {/* Logo — chỉ còn chữ, đã bỏ icon */}
+        {/* Logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
+          <Image src="/logo.svg" alt="WorkFlow" width={28} height={28} className="h-7 w-auto object-contain" />
           <span className="text-xl font-bold text-white">WorkFlow</span>
         </div>
 

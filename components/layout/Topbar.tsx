@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, Search, Bell } from "lucide-react";
+import Image from "next/image";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import UserDropdown from "@/components/dashboard/UserDropdown";
 
@@ -28,7 +29,7 @@ export default function Topbar({
         <Menu className="h-5 w-5" />
       </button>
 
-      <img src="/logo.svg" alt="WorkFlow" className="h-6 w-auto object-contain" />
+      <Image src="/logo.svg" alt="WorkFlow" width={24} height={24} className="h-6 w-auto object-contain" />
 
       <div className="mx-4 flex-1 max-w-md">
         <div className="relative">
