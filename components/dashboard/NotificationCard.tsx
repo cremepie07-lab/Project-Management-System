@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Eye,
@@ -67,6 +67,8 @@ export default function NotificationCard({
   userName,
 }: NotificationCardProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [relativeTime, setRelativeTime] = useState("");
   const [dismissed, setDismissed] = useState(false);
   const [dismissing, setDismissing] = useState(false);
   const [showReply, setShowReply] = useState(false);
@@ -74,6 +76,11 @@ export default function NotificationCard({
   const [replying, setReplying] = useState(false);
   const [replyError, setReplyError] = useState("");
   const [replySent, setReplySent] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setRelativeTime(formatRelativeTime(notification.createdAt));
+  }, [notification.createdAt]);
 
   const config = TYPE_CONFIG[notification.type as NotificationType] ?? TYPE_CONFIG.system;
   const TypeIcon = config.Icon;
@@ -189,7 +196,7 @@ export default function NotificationCard({
               <span className="font-semibold text-slate-900 dark:text-white">Bạn </span>
               {notification.message}
               <span className="block text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                {formatRelativeTime(notification.createdAt)}
+                {mounted ? relativeTime : "..."}
               </span>
             </div>
           </div>

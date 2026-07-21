@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, X } from "lucide-react";
 
 /**
@@ -9,15 +9,22 @@ import { Sparkles, X } from "lucide-react";
  * A one-time intro card shown inside the "Sắp tới" section when there are
  * no active notifications yet. Explains what the section does and can be
  * permanently dismissed by the user (stored in localStorage).
+ *
+ * Important: dismissed state is only read from localStorage after mount
+ * (useEffect) to avoid hydration mismatch between SSR and client CSR.
  */
 const DISMISS_KEY = "upnext-intro-dismissed";
 
 export default function UpNextIntroCard() {
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(DISMISS_KEY) === "true";
-  });
+  const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+    setDismissed(localStorage.getItem(DISMISS_KEY) === "true");
+  }, []);
+
+  if (!mounted) return null;
   if (dismissed) return null;
 
   function handleDismiss() {

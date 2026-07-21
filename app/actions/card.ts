@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { logSystemActivity } from "@/app/actions/activity";
 import { formatDueDate } from "@/lib/due-date";
+import { Recurring } from "@prisma/client";
 
 export async function createCard(listId: string, title: string) {
   await requireSession();
@@ -22,10 +23,11 @@ export async function updateCard(
     title?: string;
     description?: string;
     color?: string;
+    startDate?: Date | null;
     dueDate?: Date | null;
-    isRecurring?: boolean;
-    recurrenceInterval?: string | null;
-    nextRecurrence?: Date | null;
+    recurring?: Recurring;
+    reminderOffset?: number | null;
+    reminderSent?: boolean;
     isCompleted?: boolean;
     completedAt?: Date | null;
     completedBy?: string | null;
@@ -33,7 +35,7 @@ export async function updateCard(
 ) {
   const session = await requireSession();
 
-  if (data.dueDate !== undefined) {
+  if (data.dueDate !== undefined || data.startDate !== undefined) {
     const updated = await prisma.card.update({ where: { id: cardId }, data });
     await logSystemActivity(
       cardId,
@@ -122,4 +124,56 @@ export async function undoCardComplete(cardId: string) {
   await logSystemActivity(cardId, session.userId, "đã hủy đánh dấu hoàn thành");
 
   return updated;
+}
+
+export async function saveCardDateSettings(
+  cardId: string,
+  data: {
+    startDate: Date | null;
+    dueDate: Date | null;
+    recurring: Recurring;
+    reminderOffset: number | null;
+  }
+) {
+  const session = await requireSession();
+
+  if (data.startDate && data.dueDate && data.dueDate <= data.startDate) {
+    throw new Error("Hạn hoàn thành phải sau ngày bắt đầu.");
+  }
+  if (!data.dueDate && (data.recurring !== "NEVER" || data.reminderOffset !== null)) {
+    throw new Error("Cần đặt hạn hoàn thành trước khi chọn lặp lại hoặc nhắc hẹn.");
+  }
+
+  const card = await prisma.card.update({
+    where: { id: cardId },
+    data: {
+      ...data,
+      reminderSent: false,
+    },
+  });
+
+  await logSystemActivity(
+    cardId,
+    session.userId,
+    data.dueDate
+      ? `đã cập nhật ngày bắt đầu/hạn hoàn thành: ${formatDueDate(data.dueDate)}`
+      : "đã xóa ngày bắt đầu và hạn hoàn thành"
+  );
+  return card;
+}
+
+export async function removeCardDateSettings(cardId: string) {
+  const session = await requireSession();
+  const card = await prisma.card.update({
+    where: { id: cardId },
+    data: {
+      startDate: null,
+      dueDate: null,
+      recurring: "NEVER",
+      reminderOffset: null,
+      reminderSent: false,
+    },
+  });
+  await logSystemActivity(cardId, session.userId, "đã xóa ngày bắt đầu và hạn hoàn thành");
+  return card;
 }

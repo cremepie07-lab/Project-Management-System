@@ -121,7 +121,7 @@ export default function CalendarPage() {
                 <div
                   key={i}
                   className={cn(
-                    "min-h-[100px] border-r border-b border-border last:border-r-0 p-1.5",
+                    "min-h-25 border-r border-b border-border last:border-r-0 p-1.5",
                     !day.isCurrentMonth && "bg-surface-secondary/50",
                     isToday && "bg-accent/5"
                   )}

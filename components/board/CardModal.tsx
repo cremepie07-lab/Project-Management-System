@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import {
   X, Check, Trash2, Tag, Users, Plus, Pencil, Calendar,
-  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Repeat, Link, CheckCircle2, Paperclip
+  ListChecks, MessageSquare, Clock, Timer, Play, Pause, Square, RotateCcw, Link, CheckCircle2, Paperclip
 } from "lucide-react";
-import { updateCard } from "@/app/actions/card";
+import { updateCard, saveCardDateSettings, removeCardDateSettings } from "@/app/actions/card";
 import { toggleCardLabel, toggleCardMember, createLabel, deleteLabel, updateLabel } from "@/app/actions/label";
 import {
   getChecklists, createChecklist, deleteChecklist,
@@ -16,7 +16,7 @@ import {
   startTimeEntry, stopTimeEntry, savePomodoroSession,
   getCardTimeEntries, getRunningEntry, removeTimeEntry,
 } from "@/app/actions/time-tracking";
-import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES, toDateInputValue } from "@/lib/due-date";
+import { formatDueDate, getDueDateStatus, DUE_DATE_STYLES, toDateInputValue, toTimeInputValue } from "@/lib/due-date";
 import { usePomodoroStore, WORK_SEC, BREAK_SEC } from "@/store/pomodoroStore";
 import { addCardDependency, removeCardDependency, getBlockerCandidates } from "@/app/actions/dependency";
 import AttachModal from "./AttachModal";
@@ -100,13 +100,14 @@ interface Card {
   id: string; title: string; description?: string | null;
   order: number; color?: string | null;
   dueDate?: string | Date | null;
+  startDate?: string | Date | null;
+  recurring?: "NEVER" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  reminderOffset?: number | null;
+  reminderSent?: boolean;
   totalTimeSpent?: number | null;
   cardLabels: CardLabel[];
   cardMembers: CardMember[];
   checklists?: ChecklistT[];
-  isRecurring?: boolean;
-  recurrenceInterval?: string | null;
-  nextRecurrence?: string | Date | null;
   dependencies?: CardDependencyT[];
   isCompleted?: boolean;
   completedAt?: string | Date | null;
@@ -130,7 +131,7 @@ const PRESET_COLORS = [
   "#3b82f6","#8b5cf6","#ec4899","#14b8a6",
 ];
 
-type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "recurring" | "dependencies";
+type Tab = "labels" | "members" | "due" | "checklist" | "comments" | "time" | "pomodoro" | "dependencies";
 
 // ─── Slash Commands ──────────────────────────────────────────────────────────
 
@@ -162,13 +163,15 @@ export default function CardModal({
   const [newLabelName, setNewLabelName] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(PRESET_COLORS[0]);
   const [editingLabel, setEditingLabel] = useState<Label | null>(null);
+  const [hasStartDate, setHasStartDate] = useState(!!card.startDate);
+  const [startDateInput, setStartDateInput] = useState(toDateInputValue(card.startDate));
+  const [hasDueDate, setHasDueDate] = useState(!!card.dueDate);
   const [dueDateInput, setDueDateInput] = useState(toDateInputValue(card.dueDate));
+  const [dueTimeInput, setDueTimeInput] = useState(toTimeInputValue(card.dueDate) || "23:59");
+  const [recurring, setRecurring] = useState<Card["recurring"]>(card.recurring ?? "NEVER");
+  const [reminderOffset, setReminderOffset] = useState<number | null>(card.reminderOffset ?? null);
+  const [dueError, setDueError] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  // Recurrence states
-  const [isRecur, setIsRecur] = useState(card.isRecurring ?? false);
-  const [recurInterval, setRecurInterval] = useState(card.recurrenceInterval ?? "DAILY");
-  const [nextRecurInput, setNextRecurInput] = useState(toDateInputValue(card.nextRecurrence));
 
   // Dependency states
   const [dependencies, setDependencies] = useState<CardDependencyT[]>(card.dependencies ?? []);
@@ -214,17 +217,21 @@ export default function CardModal({
   const pomo = usePomodoroStore();
   const [pomoRemaining, setPomoRemaining] = useState(pomo.getRemaining());
   const [pomoSaving, setPomoSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [dueStatus, setDueStatus] = useState<ReturnType<typeof getDueDateStatus>>(null);
 
-  const dueStatus  = getDueDateStatus(localCard.dueDate);
   const totalItems = checklists.reduce((s, cl) => s + cl.items.length, 0);
   const doneItems  = checklists.reduce((s, cl) => s + cl.items.filter(i => i.isDone).length, 0);
 
-  // Lấy user hiện tại
+  // Lấy user hiện tại + mounting
   useEffect(() => {
+    setMounted(true);
+    setDueStatus(getDueDateStatus(localCard.dueDate, localCard.isCompleted));
     fetch("/api/auth/me")
       .then(r => r.json())
       .then(d => setCurrentUserId(d.user?.id ?? null))
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Gắn store vào card này khi modal mở
@@ -322,21 +329,14 @@ export default function CardModal({
   // ─── Handlers: card ───────────────────────────────────────────────────────
 
   async function handleSave() {
-    const nextRecurDate = nextRecurInput ? new Date(nextRecurInput) : null;
     await updateCard(card.id, {
       title,
       description: desc,
-      isRecurring: isRecur,
-      recurrenceInterval: recurInterval,
-      nextRecurrence: nextRecurDate,
     });
     onUpdate({
       ...localCard,
       title,
       description: desc,
-      isRecurring: isRecur,
-      recurrenceInterval: recurInterval,
-      nextRecurrence: nextRecurDate,
     });
     onClose();
   }
@@ -420,15 +420,43 @@ export default function CardModal({
   }
 
   async function handleSaveDueDate() {
-    const newDueDate = dueDateInput ? new Date(dueDateInput) : null;
-    const updated    = await updateCard(card.id, { dueDate: newDueDate });
-    setLocalCard(prev => ({ ...prev, dueDate: updated.dueDate }));
+    setDueError("");
+    const startDate = hasStartDate && startDateInput ? new Date(`${startDateInput}T00:00:00`) : null;
+    const dueDate = hasDueDate && dueDateInput
+      ? new Date(`${dueDateInput}T${dueTimeInput || "23:59"}:00`)
+      : null;
+    if (startDate && dueDate && dueDate <= startDate) {
+      setDueError("Hạn hoàn thành phải sau ngày bắt đầu.");
+      return;
+    }
+    try {
+      const updated = await saveCardDateSettings(card.id, {
+        startDate,
+        dueDate,
+        recurring: dueDate ? (recurring ?? "NEVER") : "NEVER",
+        reminderOffset: dueDate ? reminderOffset : null,
+      });
+      const nextCard = { ...localCard, ...updated } as Card;
+      setLocalCard(nextCard);
+      onUpdate(nextCard);
+    } catch (error) {
+      setDueError(error instanceof Error ? error.message : "Không thể lưu ngày hạn.");
+    }
   }
 
   async function handleClearDueDate() {
+    setDueError("");
+    setHasStartDate(false);
+    setStartDateInput("");
+    setHasDueDate(false);
     setDueDateInput("");
-    const updated = await updateCard(card.id, { dueDate: null });
-    setLocalCard(prev => ({ ...prev, dueDate: updated.dueDate }));
+    setDueTimeInput("23:59");
+    setRecurring("NEVER");
+    setReminderOffset(null);
+    const updated = await removeCardDateSettings(card.id);
+    const nextCard = { ...localCard, ...updated } as Card;
+    setLocalCard(nextCard);
+    onUpdate(nextCard);
   }
 
   // ─── Handlers: checklist ─────────────────────────────────────────────────
@@ -641,7 +669,7 @@ export default function CardModal({
                   {cl.label.name}
                 </span>
               ))}
-              {dueStatus && localCard.dueDate && (
+              {mounted && dueStatus && localCard.dueDate && (
                 <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${DUE_DATE_STYLES[dueStatus]}`}>
                   <Calendar className="w-3 h-3" />
                   {formatDueDate(localCard.dueDate)}
@@ -717,7 +745,6 @@ export default function CardModal({
               { key: "comments",     icon: <MessageSquare className="w-3.5 h-3.5" />, label: "Bình luận" },
               { key: "time",         icon: <Clock className="w-3.5 h-3.5" />,         label: "Thời gian" },
               { key: "pomodoro",     icon: <Timer className="w-3.5 h-3.5" />,         label: "Pomodoro" },
-              { key: "recurring",    icon: <Repeat className="w-3.5 h-3.5" />,        label: "Lặp lại" },
               { key: "dependencies", icon: <Link className="w-3.5 h-3.5" />,          label: "Liên kết" },
             ] as { key: Tab; icon: React.ReactNode; label: string }[]).map(t => (
               <button key={t.key} onClick={() => setTab(tab === t.key ? null : t.key)}
@@ -826,21 +853,35 @@ export default function CardModal({
 
           {/* ── TAB: Hạn hoàn thành ────────────────────────────────────────── */}
           {tab === "due" && (
-            <div className="bg-bg-elevated rounded-xl p-3 space-y-3">
+            <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
               <p className="text-xs text-text-muted font-medium">Đặt hạn hoàn thành</p>
-              <input type="date" value={dueDateInput} onChange={e => setDueDateInput(e.target.value)}
-                className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent scheme-dark"
-              />
-              <div className="flex gap-2">
-                <button onClick={handleSaveDueDate} className="flex-1 bg-accent hover:bg-accent-hover text-accent-text text-xs font-medium py-2 rounded-lg transition-colors cursor-pointer">
-                  Lưu hạn
-                </button>
-                {localCard.dueDate && (
-                  <button onClick={handleClearDueDate} className="flex items-center gap-2 bg-bg-hover hover:bg-bg-active text-text-secondary text-xs transition-colors cursor-pointer">
-                    Xóa hạn
-                  </button>
-                )}
+              <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                <input type="checkbox" checked={hasStartDate} onChange={e => setHasStartDate(e.target.checked)} className="accent-accent" />
+                Ngày bắt đầu
+              </label>
+              {hasStartDate && <input type="date" value={startDateInput} onChange={e => setStartDateInput(e.target.value)} className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent scheme-dark" />}
+              <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                <input type="checkbox" checked={hasDueDate} onChange={e => setHasDueDate(e.target.checked)} className="accent-accent" />
+                Hạn hoàn thành
+              </label>
+              {hasDueDate && <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input type="date" value={dueDateInput} onChange={e => setDueDateInput(e.target.value)} className="min-w-0 bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent scheme-dark" />
+                <input type="time" value={dueTimeInput} onChange={e => setDueTimeInput(e.target.value)} className="bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent scheme-dark" />
+              </div>}
+              <div className={hasDueDate ? "space-y-3" : "space-y-3 opacity-45 pointer-events-none"}>
+                <div><label className="text-xs text-text-muted font-medium mb-1.5 block">Lặp lại</label>
+                  <select value={recurring} onChange={e => setRecurring(e.target.value as Card["recurring"])} className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent">
+                    <option value="NEVER">Không lặp lại</option><option value="DAILY">Hàng ngày</option><option value="WEEKLY">Hàng tuần</option><option value="MONTHLY">Hàng tháng</option><option value="YEARLY">Hàng năm</option>
+                  </select>
+                </div>
+                <div><label className="text-xs text-text-muted font-medium mb-1.5 block">Nhắc hẹn</label>
+                  <select value={reminderOffset ?? ""} onChange={e => setReminderOffset(e.target.value === "" ? null : Number(e.target.value))} className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent">
+                    <option value="">Không nhắc</option><option value="0">Đúng lúc đến hạn</option><option value="5">Trước 5 phút</option><option value="10">Trước 10 phút</option><option value="15">Trước 15 phút</option><option value="60">Trước 1 giờ</option><option value="720">Trước 1/2 ngày</option><option value="10080">Trước 1 tuần</option>
+                  </select>
+                </div>
               </div>
+              {dueError && <p className="text-xs text-red-400">{dueError}</p>}
+              <div className="flex gap-2 pt-1"><button onClick={handleSaveDueDate} className="flex-1 bg-accent hover:bg-accent-hover text-accent-text text-xs font-medium py-2 rounded-lg transition-colors cursor-pointer">Save</button><button onClick={handleClearDueDate} className="px-3 bg-bg-hover hover:bg-bg-active text-text-secondary text-xs rounded-lg transition-colors cursor-pointer">Remove</button></div>
             </div>
           )}
 
@@ -1151,59 +1192,6 @@ export default function CardModal({
                   Đóng modal không mất timer — mini timer sẽ nổi ở góc màn hình.
                 </p>
               </div>
-            </div>
-          )}
-
-          {/* ── TAB: Lặp lại ──────────────────────────────────────────────── */}
-          {tab === "recurring" && (
-            <div className="bg-bg-elevated rounded-xl p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-text-primary font-semibold">Tự động lặp lại thẻ này</p>
-                  <p className="text-[11px] text-text-muted">Tạo bản sao thẻ định kỳ hàng ngày, tuần hoặc tháng</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRecur(!isRecur);
-                    if (!isRecur && !nextRecurInput) {
-                      const tomorrow = new Date();
-                      tomorrow.setDate(tomorrow.getDate() + 1);
-                      setNextRecurInput(tomorrow.toISOString().split("T")[0]);
-                    }
-                  }}
-                  className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-300 ${isRecur ? "bg-accent justify-end" : "bg-bg-hover justify-start"}`}
-                >
-                  <span className="w-5 h-5 rounded-full bg-white shadow-md block" />
-                </button>
-              </div>
-
-              {isRecur && (
-                <div className="space-y-3 pt-2 border-t border-border-default">
-                  <div>
-                    <label className="text-xs text-text-muted font-medium mb-1.5 block">Chu kỳ lặp</label>
-                    <select
-                      value={recurInterval}
-                      onChange={(e) => setRecurInterval(e.target.value)}
-                      className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-xs text-text-primary outline-none focus:border-accent"
-                    >
-                      <option value="DAILY">Hàng ngày (Daily)</option>
-                      <option value="WEEKLY">Hàng tuần (Weekly)</option>
-                      <option value="MONTHLY">Hàng tháng (Monthly)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-text-muted font-medium mb-1.5 block">Ngày bắt đầu lặp tiếp theo</label>
-                    <input
-                      type="date"
-                      value={nextRecurInput}
-                      onChange={(e) => setNextRecurInput(e.target.value)}
-                      className="w-full bg-bg-hover border border-border-strong rounded-lg px-3 py-2 text-xs text-text-primary outline-none focus:border-accent scheme-dark"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

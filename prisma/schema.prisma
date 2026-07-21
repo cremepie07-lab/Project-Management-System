@@ -107,7 +107,11 @@ model Card {
   description String?
   order       Float                // ← Float
   color       String?
-  dueDate     DateTime?
+  startDate      DateTime?
+  dueDate        DateTime?
+  recurring      Recurring @default(NEVER)
+  reminderOffset Int?
+  reminderSent   Boolean   @default(false)
 
   listId String
   list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -121,11 +125,6 @@ model Card {
   activities  Activity[]
   timeEntries TimeEntry[]
   totalTimeSpent Int @default(0) @map("total_time_spent")
-
-  // Recurrence
-  isRecurring        Boolean   @default(false)
-  recurrenceInterval String?   // "DAILY", "WEEKLY", "MONTHLY"
-  nextRecurrence     DateTime?
 
   // Completion
   isCompleted  Boolean   @default(false)
@@ -141,7 +140,17 @@ model Card {
   attachments        Attachment[]
 
   @@index([listId])
+  @@index([dueDate])
+  @@index([reminderSent, dueDate])
   @@map("cards")
+}
+
+enum Recurring {
+  NEVER
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }
 
 model Attachment {

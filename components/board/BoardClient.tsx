@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // @ts-ignore
 import confetti from "canvas-confetti";
 import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2, Circle } from "lucide-react";
@@ -35,6 +35,10 @@ interface Card {
   id: string; title: string; description?: string | null;
   order: number; color?: string | null;
   dueDate?: string | Date | null;
+  startDate?: string | Date | null;
+  recurring?: "NEVER" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  reminderOffset?: number | null;
+  reminderSent?: boolean;
   cardLabels: CardLabel[];
   cardMembers: CardMember[];
   checklists?: ChecklistT[];
@@ -63,7 +67,12 @@ function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick
     id: card.id, data: { type: "card", card },
   });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
-  const dueStatus = getDueDateStatus(card.dueDate);
+  const [mounted, setMounted] = useState(false);
+  const [dueStatus, setDueStatus] = useState<ReturnType<typeof getDueDateStatus>>(null);
+  useEffect(() => {
+    setMounted(true);
+    setDueStatus(getDueDateStatus(card.dueDate, card.isCompleted));
+  }, [card.dueDate, card.isCompleted]);
   const totalItems = card.checklists?.reduce((sum, cl) => sum + cl.items.length, 0) ?? 0;
   const doneItems = card.checklists?.reduce((sum, cl) => sum + cl.items.filter((i) => i.isDone).length, 0) ?? 0;
   const trackedSeconds = card.timeEntries ? sumTrackedSeconds(card.timeEntries) : 0;
@@ -78,7 +87,7 @@ function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick
   }).length ?? 0;
   const isBlocked = blockerCount > 0;
 
-  const hasMeta = dueStatus || totalItems > 0 || trackedSeconds > 0 || commentCount > 0 || card.cardMembers.length > 0 || isBlocked || card.isCompleted;
+  const hasMeta = (mounted && dueStatus) || totalItems > 0 || trackedSeconds > 0 || commentCount > 0 || card.cardMembers.length > 0 || isBlocked || card.isCompleted;
 
   return (
     <div
@@ -134,7 +143,7 @@ function SortableCard({ card, onClick, onToggleComplete }: { card: Card; onClick
               Bị chặn
             </span>
           )}
-          {dueStatus && card.dueDate && (
+          {mounted && dueStatus && card.dueDate && (
             <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border ${DUE_DATE_STYLES[dueStatus]}`}>
               <Calendar className="w-2.5 h-2.5" />
               {formatDueDate(card.dueDate)}

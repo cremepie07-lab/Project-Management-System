@@ -7,6 +7,7 @@ import BoardClient from "@/components/board/BoardClient";
 import DeleteBoardButton from "@/components/board/DeleteBoardButton";
 
 import { processRecurringCards } from "@/app/actions/recurring";
+import { checkAndCreateReminders } from "@/app/actions/reminder";
 
 export default async function BoardPage({
   params,
@@ -18,6 +19,7 @@ export default async function BoardPage({
 
   // Xử lý các thẻ lặp lại định kỳ
   await processRecurringCards();
+  await checkAndCreateReminders(session.userId);
 
   const { boardId } = await params;
 
@@ -84,12 +86,12 @@ export default async function BoardPage({
       {/* Light mode overlay — softens the always-dark board gradient */}
       <div className="absolute inset-0 bg-white/65 dark:bg-transparent pointer-events-none transition-colors duration-300" />
 
-      <header className="relative z-10 h-14 bg-white dark:bg-black/40 backdrop-blur-md flex items-center px-4 gap-3 border-b border-gray-200 dark:border-white/8 sticky top-0 z-40 select-none shadow-sm transition-colors duration-200">
+      <header className="relative z-10 h-14 bg-white dark:bg-black/40 backdrop-blur-md flex items-center px-4 gap-3 border-b border-gray-200 dark:border-white/8 top-0 select-none shadow-sm transition-colors duration-200">
         <Link
           href="/dashboard"
           className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150 cursor-pointer"
         >
-          <ArrowLeft className="w-[18px] h-[18px]" />
+          <ArrowLeft className="w-4.5 h-4.5" />
         </Link>
         <h1 className="text-gray-900 dark:text-white font-semibold text-sm flex-1 truncate">{board.title}</h1>
         {isOwner && <DeleteBoardButton boardId={board.id} />}

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import UpNextSection from "@/components/dashboard/UpNextSection";
 import { processRecurringCards } from "@/app/actions/recurring";
+import { checkAndCreateReminders } from "@/app/actions/reminder";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -11,6 +12,7 @@ export default async function DashboardPage() {
 
   // Xử lý các thẻ lặp lại định kỳ
   await processRecurringCards();
+  await checkAndCreateReminders(session.userId);
 
   // Lấy workspace + board thật từ DB
   const workspaces = await prisma.workspace.findMany({
