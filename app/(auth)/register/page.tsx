@@ -16,14 +16,42 @@ export default function RegisterPage() {
   const update = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  function validateName(value: string) {
+    const trimmed = value.trim();
+    if (trimmed.length < 2) return "Tên quá ngắn";
+    if (!/^[\p{L}\s]+$/u.test(trimmed)) return "Họ và tên chỉ được chứa chữ cái, không chứa số hoặc ký tự đặc biệt";
+    return "";
+  }
+
+  function validateEmail(value: string) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Email không hợp lệ. Vui lòng nhập theo định dạng: ten@vidu.com";
+    return "";
+  }
+
   function validate() {
     const errs: Record<string, string> = {};
-    if (form.name.trim().length < 2) errs.name = "Tên quá ngắn";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Email không hợp lệ";
-    if (form.password.length < 6) errs.password = "Mật khẩu tối thiểu 6 ký tự";
+    const nameErr = validateName(form.name);
+    if (nameErr) errs.name = nameErr;
+    const emailErr = validateEmail(form.email);
+    if (emailErr) errs.email = emailErr;
+    if (form.password.length < 6) errs.password = "Mật khẩu phải có ít nhất 6 ký tự";
     if (form.confirm !== form.password) errs.confirm = "Mật khẩu không khớp";
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  }
+
+  function handleBlur(field: string) {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (field === "name") {
+        const err = validateName(form.name);
+        if (err) next.name = err; else delete next.name;
+      } else if (field === "email") {
+        const err = validateEmail(form.email);
+        if (err) next.email = err; else delete next.email;
+      }
+      return next;
+    });
   }
 
   async function handleSubmit() {
@@ -85,6 +113,7 @@ export default function RegisterPage() {
                 type="text"
                 value={form.name}
                 onChange={update("name")}
+                onBlur={() => handleBlur("name")}
                 placeholder="Nguyễn Văn A"
                 className={`w-full bg-gray-900 border rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500 transition-colors ${errors.name ? "border-red-500" : "border-gray-800"}`}
               />
@@ -101,6 +130,7 @@ export default function RegisterPage() {
                 type="email"
                 value={form.email}
                 onChange={update("email")}
+                onBlur={() => handleBlur("email")}
                 placeholder="ban@vidu.com"
                 className={`w-full bg-gray-900 border rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500 transition-colors ${errors.email ? "border-red-500" : "border-gray-800"}`}
               />
@@ -117,7 +147,7 @@ export default function RegisterPage() {
                 type={showPw ? "text" : "password"}
                 value={form.password}
                 onChange={update("password")}
-                placeholder="••••••••"
+                placeholder="Ít nhất 6 ký tự"
                 className={`w-full bg-gray-900 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500 transition-colors ${errors.password ? "border-red-500" : "border-gray-800"}`}
               />
               <button

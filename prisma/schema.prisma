@@ -32,6 +32,7 @@ model User {
   timeEntries     TimeEntry[]
   completedCards  Card[]       @relation("CompletedBy")
   notifications   Notification[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -309,4 +310,17 @@ model Notification {
   @@index([userId])
   @@index([userId, isDismissed])
   @@map("notifications")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@map("password_reset_tokens")
 }
