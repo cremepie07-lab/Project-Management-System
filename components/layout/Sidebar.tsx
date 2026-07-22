@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutGrid, Home, Clock, Star, ChevronDown, Users, Settings,
-  LogOut, Plus, Loader2, TrendingUp, Calendar, BarChart3,
+  LogOut, Plus, Loader2, TrendingUp, Calendar, BarChart3, ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -12,6 +12,7 @@ interface Workspace {
   id: string;
   name: string;
   color: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
 }
 
 interface SidebarProps {
@@ -139,6 +140,10 @@ export default function Sidebar({
                       { icon: LayoutGrid, label: "Boards", href: "/dashboard" },
                       { icon: Users, label: "Thanh vien", href: `/workspace/${ws.id}/members` },
                       { icon: Settings, label: "Cai dat", href: `/workspace/${ws.id}/settings` },
+                      ...(ws.role === "OWNER" || ws.role === "ADMIN"
+                        ? [{ icon: ClipboardList, label: "Tong quan", href: `/workspace/${ws.id}/overview` }]
+                        : []
+                      ),
                     ].map((sub) => (
                       <button
                         key={sub.label}

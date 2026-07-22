@@ -22,6 +22,10 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" },
     include: {
       boards: { orderBy: { createdAt: "desc" } },
+      members: {
+        where: { userId: session.userId },
+        select: { role: true },
+      },
     },
   });
 
@@ -39,6 +43,7 @@ export default async function DashboardPage() {
         name: ws.name,
         slug: ws.slug,
         color: "from-purple-600 to-blue-600",
+        role: ws.members[0]?.role ?? "MEMBER",
         boards: ws.boards.map((b) => ({
           id: b.id,
           title: b.title,

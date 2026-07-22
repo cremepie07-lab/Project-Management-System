@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutGrid, Home, Clock, Star, ChevronDown, Users, Settings, LogOut, Plus, Loader2, TrendingUp } from "lucide-react";
+import { LayoutGrid, Home, Clock, Star, ChevronDown, Users, Settings, LogOut, Plus, Loader2, TrendingUp, BarChart3 } from "lucide-react";
 
 interface Workspace {
   id: string;
   name: string;
   color: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
 }
 
 interface SidebarProps {
@@ -99,6 +100,10 @@ export default function Sidebar({
                     { icon: <LayoutGrid className="w-3.5 h-3.5" />, label: "Boards", href: `/dashboard` },
                     { icon: <Users className="w-3.5 h-3.5" />, label: "Thành viên", href: `/workspace/${ws.id}/members` },
                     { icon: <Settings className="w-3.5 h-3.5" />, label: "Cài đặt", href: `/workspace/${ws.id}/settings` },
+                    ...(ws.role === "OWNER" || ws.role === "ADMIN"
+                      ? [{ icon: <BarChart3 className="w-3.5 h-3.5" />, label: "Tổng quan", href: `/workspace/${ws.id}/overview` }]
+                      : []
+                    ),
                   ].map((sub) => (
                     <button
                       key={sub.label}

@@ -26,6 +26,7 @@ interface Workspace {
   name: string;
   slug: string;
   color: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
   boards: Board[];
 }
 
@@ -70,6 +71,7 @@ export default function DashboardClient({ name, email, avatarUrl, userId, initia
       name: ws.name,
       slug: ws.slug,
       color,
+      role: "OWNER" as const,
       boards: [],
     }]);
     setActiveWsId(ws.id);
