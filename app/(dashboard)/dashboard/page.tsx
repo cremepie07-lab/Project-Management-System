@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
 
   // Xử lý các thẻ lặp lại định kỳ
-  await processRecurringCards();
+  await processRecurringCards(session.userId);
   await checkAndCreateReminders(session.userId);
 
   // Lấy workspace + board thật từ DB
@@ -30,6 +30,7 @@ export default async function DashboardPage() {
       name={session.name}
       email={session.email}
       avatarUrl={session.avatarUrl ?? null}
+      userId={session.userId}
       // UpNextSection là Server Component — truyền như ReactNode để tránh
       // lỗi "next/headers trong Client Component"
       upNextSection={<UpNextSection />}

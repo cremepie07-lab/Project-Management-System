@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { triggerUserNotification } from "@/lib/pusher-server";
 
 async function assertOwner(workspaceId: string, userId: string) {
   const member = await prisma.workspaceMember.findUnique({
@@ -68,7 +69,7 @@ export async function inviteMember(workspaceId: string, email: string) {
   });
 
   // Gửi thông báo đến người được mời
-  await prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: {
       userId: user.id,
       type: "invite",
@@ -77,6 +78,22 @@ export async function inviteMember(workspaceId: string, email: string) {
       workspaceName: workspace.name,
       linkUrl: `/workspace/${workspaceId}/invite`,
     },
+  });
+
+  await triggerUserNotification(user.id, {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    cardId: notification.cardId,
+    cardTitle: notification.cardTitle,
+    boardId: notification.boardId,
+    workspaceName: notification.workspaceName,
+    listName: notification.listName,
+    isRead: notification.isRead,
+    isDismissed: notification.isDismissed,
+    linkUrl: notification.linkUrl,
+    createdAt: notification.createdAt.toISOString(),
   });
 
   revalidatePath(`/workspace/${workspaceId}/members`);

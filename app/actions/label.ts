@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { triggerUserNotification } from "@/lib/pusher-server";
 
 export async function getBoardLabels(boardId: string) {
   await requireSession();
@@ -69,7 +70,7 @@ export async function toggleCardMember(cardId: string, userId: string) {
         },
       });
       if (card) {
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
           data: {
             userId,
             type: "self_assigned",
@@ -80,6 +81,20 @@ export async function toggleCardMember(cardId: string, userId: string) {
             workspaceName: card.list.board.workspace.name,
             listName: card.list.title,
           },
+        });
+        await triggerUserNotification(userId, {
+          id: notification.id,
+          type: notification.type,
+          message: notification.message,
+          cardId: notification.cardId,
+          cardTitle: notification.cardTitle,
+          boardId: notification.boardId,
+          workspaceName: notification.workspaceName,
+          listName: notification.listName,
+          isRead: notification.isRead,
+          isDismissed: notification.isDismissed,
+          linkUrl: notification.linkUrl,
+          createdAt: notification.createdAt.toISOString(),
         });
       }
     } catch (err) {

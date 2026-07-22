@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { triggerBoardEvent } from "@/lib/pusher-server";
 
 export async function getLists(boardId: string) {
   await requireSession();
@@ -15,33 +16,67 @@ export async function getLists(boardId: string) {
 }
 
 export async function createList(boardId: string, title: string) {
-  await requireSession();
+  const session = await requireSession();
   const last = await prisma.list.findFirst({
     where: { boardId },
     orderBy: { order: "desc" },
   });
-  return prisma.list.create({
+  const list = await prisma.list.create({
     data: { title, boardId, order: (last?.order ?? 0) + 1000 },
   });
+
+  await triggerBoardEvent(boardId, "list:created", {
+    list: { ...list, cards: [] },
+    actorId: session.userId,
+  });
+
+  return list;
 }
 
 export async function updateListTitle(listId: string, title: string) {
-  await requireSession();
-  return prisma.list.update({ where: { id: listId }, data: { title } });
+  const session = await requireSession();
+  const list = await prisma.list.update({ where: { id: listId }, data: { title } });
+
+  await triggerBoardEvent(list.boardId, "list:updated", {
+    listId,
+    title,
+    actorId: session.userId,
+  });
+
+  return list;
 }
 
 export async function deleteList(listId: string) {
-  await requireSession();
+  const session = await requireSession();
+  const list = await prisma.list.findUnique({ where: { id: listId }, select: { boardId: true } });
+
   await prisma.list.delete({ where: { id: listId } });
+
+  if (list) {
+    await triggerBoardEvent(list.boardId, "list:deleted", {
+      listId,
+      actorId: session.userId,
+    });
+  }
 }
 
 export async function updateListOrder(listId: string, order: number) {
-  await requireSession();
+  const session = await requireSession();
+  const list = await prisma.list.findUnique({ where: { id: listId }, select: { boardId: true } });
+
   await prisma.list.update({ where: { id: listId }, data: { order } });
+
+  if (list) {
+    await triggerBoardEvent(list.boardId, "list:moved", {
+      listId,
+      order,
+      actorId: session.userId,
+    });
+  }
 }
 
 export async function rebalanceLists(boardId: string) {
-  await requireSession();
+  const session = await requireSession();
   const lists = await prisma.list.findMany({
     where: { boardId },
     orderBy: { order: "asc" },
@@ -52,4 +87,9 @@ export async function rebalanceLists(boardId: string) {
       prisma.list.update({ where: { id: l.id }, data: { order: (i + 1) * 1000 } })
     )
   );
+
+  await triggerBoardEvent(boardId, "list:reordered", {
+    lists: lists.map((l, i) => ({ id: l.id, order: (i + 1) * 1000 })),
+    actorId: session.userId,
+  });
 }

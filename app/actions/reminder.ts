@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { formatDueDate } from "@/lib/due-date";
+import { triggerUserNotification } from "@/lib/pusher-server";
 
 /**
  * Creates at most one due-date notification per card occurrence for the signed-in assignee.
@@ -32,6 +33,15 @@ export async function checkAndCreateReminders(userId: string) {
     const reminderTime = card.dueDate.getTime() - card.reminderOffset * 60_000;
     if (reminderTime > now.getTime()) continue;
 
+    // Capture notification data from inside the transaction for Pusher trigger after commit
+    let notificationData: {
+      id: string; type: string; message: string;
+      cardId: string | null; cardTitle: string | null; boardId: string | null;
+      workspaceName: string | null; listName: string | null;
+      isRead: boolean; isDismissed: boolean; linkUrl: string | null;
+      createdAt: string;
+    } | null = null;
+
     const notified = await prisma.$transaction(async (tx) => {
       const didClaim = await tx.card.updateMany({
         where: { id: card.id, reminderSent: false },
@@ -39,7 +49,7 @@ export async function checkAndCreateReminders(userId: string) {
       });
       if (didClaim.count === 0) return false;
 
-      await tx.notification.create({
+      const n = await tx.notification.create({
         data: {
           userId,
           type: "due_date",
@@ -51,9 +61,30 @@ export async function checkAndCreateReminders(userId: string) {
           listName: card.list.title,
         },
       });
+
+      notificationData = {
+        id: n.id,
+        type: n.type,
+        message: n.message,
+        cardId: n.cardId,
+        cardTitle: n.cardTitle,
+        boardId: n.boardId,
+        workspaceName: n.workspaceName,
+        listName: n.listName,
+        isRead: n.isRead,
+        isDismissed: n.isDismissed,
+        linkUrl: n.linkUrl,
+        createdAt: n.createdAt.toISOString(),
+      };
+
       return true;
     });
-    if (notified) created++;
+
+    // Trigger Pusher AFTER transaction commits successfully
+    if (notified && notificationData) {
+      await triggerUserNotification(userId, notificationData);
+      created++;
+    }
   }
   return { created };
 }

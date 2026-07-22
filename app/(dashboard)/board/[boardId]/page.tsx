@@ -17,8 +17,8 @@ export default async function BoardPage({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  // Xử lý các thẻ lặp lại định kỳ
-  await processRecurringCards();
+  // Xử lý các thẻ lặp lại định kỳ (clone trước, rồi nhắc hẹn theo dueDate mới)
+  await processRecurringCards(session.userId);
   await checkAndCreateReminders(session.userId);
 
   const { boardId } = await params;
@@ -103,6 +103,7 @@ export default async function BoardPage({
           initialLists={board.lists as any}
           initialLabels={board.labels}
           workspaceMembers={workspaceMembers}
+          userId={session.userId}
         />
       </div>
     </div>

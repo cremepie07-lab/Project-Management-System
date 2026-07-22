@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Check, Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getNotifications, markAsRead, markAllAsRead } from "@/app/actions/notifications";
+import { getPusherClient } from "@/lib/pusher-client";
 
 interface Notification {
   id: string;
@@ -14,7 +15,7 @@ interface Notification {
   createdAt: Date | string;
 }
 
-export default function NotificationCenter() {
+export default function NotificationCenter({ userId }: { userId: string }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
@@ -42,6 +43,26 @@ export default function NotificationCenter() {
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // ── Pusher real-time notification subscription ──
+  useEffect(() => {
+    if (!userId) return;
+
+    const pusher = getPusherClient();
+    const channel = pusher.subscribe(`private-user-${userId}`);
+
+    channel.bind("notification:new", (data: { notification: Notification }) => {
+      setNotifications((prev) => {
+        // Avoid duplicates
+        if (prev.some((n) => n.id === data.notification.id)) return prev;
+        return [data.notification, ...prev];
+      });
+    });
+
+    return () => {
+      pusher.unsubscribe(`private-user-${userId}`);
+    };
+  }, [userId]);
 
   // Close dropdown on click outside
   useEffect(() => {

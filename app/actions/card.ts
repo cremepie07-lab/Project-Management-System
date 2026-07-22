@@ -5,16 +5,28 @@ import { requireSession } from "@/lib/session";
 import { logSystemActivity } from "@/app/actions/activity";
 import { formatDueDate } from "@/lib/due-date";
 import { Recurring } from "@prisma/client";
+import { triggerBoardEvent } from "@/lib/pusher-server";
 
 export async function createCard(listId: string, title: string) {
-  await requireSession();
+  const session = await requireSession();
   const last = await prisma.card.findFirst({
     where: { listId },
     orderBy: { order: "desc" },
   });
-  return prisma.card.create({
+  const card = await prisma.card.create({
     data: { title, listId, order: (last?.order ?? 0) + 1000 },
   });
+
+  const list = await prisma.list.findUnique({ where: { id: listId }, select: { boardId: true } });
+  if (list) {
+    await triggerBoardEvent(list.boardId, "card:created", {
+      card: { ...card, cardLabels: [], cardMembers: [] },
+      listId,
+      actorId: session.userId,
+    });
+  }
+
+  return card;
 }
 
 export async function updateCard(
@@ -51,8 +63,21 @@ export async function updateCard(
 }
 
 export async function deleteCard(cardId: string) {
-  await requireSession();
+  const session = await requireSession();
+  const card = await prisma.card.findUnique({
+    where: { id: cardId },
+    select: { list: { select: { boardId: true } } },
+  });
+  const boardId = card?.list.boardId;
+
   await prisma.card.delete({ where: { id: cardId } });
+
+  if (boardId) {
+    await triggerBoardEvent(boardId, "card:deleted", {
+      cardId,
+      actorId: session.userId,
+    });
+  }
 }
 
 export async function updateCardOrder(cardId: string, newListId: string, order: number) {
@@ -71,6 +96,17 @@ export async function updateCardOrder(cardId: string, newListId: string, order: 
     if (targetList) {
       await logSystemActivity(cardId, session.userId, `đã di chuyển thẻ tới danh sách "${targetList.title}"`);
     }
+  }
+
+  const newBoard = await prisma.list.findUnique({ where: { id: newListId }, select: { boardId: true } });
+  if (newBoard) {
+    await triggerBoardEvent(newBoard.boardId, "card:moved", {
+      cardId,
+      toListId: newListId,
+      fromListId: current?.listId ?? newListId,
+      order,
+      actorId: session.userId,
+    });
   }
 
   const siblings = await prisma.card.findMany({
@@ -106,6 +142,14 @@ export async function markCardComplete(cardId: string) {
 
   await logSystemActivity(cardId, session.userId, "đã đánh dấu hoàn thành");
 
+  const card = await prisma.card.findUnique({ where: { id: cardId }, select: { list: { select: { boardId: true } } } });
+  if (card) {
+    await triggerBoardEvent(card.list.boardId, "card:updated", {
+      card: { id: updated.id, isCompleted: updated.isCompleted, completedAt: updated.completedAt, completedBy: updated.completedBy },
+      actorId: session.userId,
+    });
+  }
+
   return updated;
 }
 
@@ -122,6 +166,14 @@ export async function undoCardComplete(cardId: string) {
   });
 
   await logSystemActivity(cardId, session.userId, "đã hủy đánh dấu hoàn thành");
+
+  const card = await prisma.card.findUnique({ where: { id: cardId }, select: { list: { select: { boardId: true } } } });
+  if (card) {
+    await triggerBoardEvent(card.list.boardId, "card:updated", {
+      card: { id: updated.id, isCompleted: updated.isCompleted, completedAt: null, completedBy: null },
+      actorId: session.userId,
+    });
+  }
 
   return updated;
 }

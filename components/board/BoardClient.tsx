@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 // @ts-ignore
 import confetti from "canvas-confetti";
 import { Plus, X, GripVertical, Filter, Calendar, ListChecks, MessageSquare, Clock, Lock, CheckCircle2, Circle } from "lucide-react";
@@ -23,6 +23,7 @@ import { formatDuration, sumTrackedSeconds } from "@/lib/time-format";
 import CardModal from "@/components/board/CardModal";
 import { usePomodoroStore } from "@/store/pomodoroStore";
 import { getContrastTextColor } from "@/lib/color-utils";
+import { getPusherClient } from "@/lib/pusher-client";
 
 // ── Types ──
 interface Label { id: string; name: string; color: string; }
@@ -302,12 +303,13 @@ function FilterBar({ boardLabels, workspaceMembers, filterLabels, filterMembers,
 
 // ── Main ──
 export default function BoardClient({
-  boardId, initialLists, initialLabels, workspaceMembers,
+  boardId, initialLists, initialLabels, workspaceMembers, userId,
 }: {
   boardId: string;
   initialLists: List[];
   initialLabels: Label[];
   workspaceMembers: Member[];
+  userId: string;
 }) {
   const [lists, setLists] = useState<List[]>([...initialLists].sort((a, b) => a.order - b.order));
   const [boardLabels, setBoardLabels] = useState<Label[]>(initialLabels);
@@ -322,6 +324,125 @@ export default function BoardClient({
     useCardFilter(lists);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  // ── Pusher real-time subscription ──
+  const userIdRef = useRef(userId);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
+
+  useEffect(() => {
+    const pusher = getPusherClient();
+    const channel = pusher.subscribe(`board-${boardId}`);
+
+    channel.bind("card:created", (data: { card: Card; listId: string; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) =>
+        prev.map((l) =>
+          l.id === data.listId
+            ? { ...l, cards: [...l.cards, data.card] }
+            : l
+        )
+      );
+    });
+
+    channel.bind("card:deleted", (data: { cardId: string; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) =>
+        prev.map((l) => ({
+          ...l,
+          cards: l.cards.filter((c) => c.id !== data.cardId),
+        }))
+      );
+      setSelectedCard((prev) => (prev && prev.card.id === data.cardId ? null : prev));
+    });
+
+    channel.bind("card:moved", (data: { cardId: string; fromListId: string; toListId: string; order: number; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) => {
+        let movedCard: Card | undefined;
+        const next = prev.map((l) => {
+          if (l.id === data.fromListId) {
+            movedCard = l.cards.find((c) => c.id === data.cardId);
+            return { ...l, cards: l.cards.filter((c) => c.id !== data.cardId) };
+          }
+          return l;
+        });
+        if (!movedCard) return prev;
+        return next.map((l) => {
+          if (l.id === data.toListId) {
+            const exists = l.cards.some((c) => c.id === data.cardId);
+            if (exists) return l;
+            const updatedCard = { ...movedCard!, order: data.order };
+            const without = l.cards.filter((c) => c.id !== data.cardId);
+            const inserted = [...without, updatedCard].sort((a, b) => a.order - b.order);
+            return { ...l, cards: inserted };
+          }
+          return l;
+        });
+      });
+    });
+
+    channel.bind("card:updated", (data: { card: Partial<Card> & { id: string }; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) =>
+        prev.map((l) => ({
+          ...l,
+          cards: l.cards.map((c) =>
+            c.id === data.card.id ? { ...c, ...data.card } : c
+          ),
+        }))
+      );
+      setSelectedCard((prev) => {
+        if (prev && prev.card.id === data.card.id) {
+          return { ...prev, card: { ...prev.card, ...data.card } };
+        }
+        return prev;
+      });
+    });
+
+    channel.bind("list:created", (data: { list: List; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) => {
+        if (prev.some((l) => l.id === data.list.id)) return prev;
+        return [...prev, data.list].sort((a, b) => a.order - b.order);
+      });
+    });
+
+    channel.bind("list:deleted", (data: { listId: string; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) => prev.filter((l) => l.id !== data.listId));
+      setSelectedCard((prev) => (prev && prev.listId === data.listId ? null : prev));
+    });
+
+    channel.bind("list:moved", (data: { listId: string; order: number; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) =>
+        prev.map((l) => (l.id === data.listId ? { ...l, order: data.order } : l))
+          .sort((a, b) => a.order - b.order)
+      );
+    });
+
+    channel.bind("list:updated", (data: { listId: string; title: string; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) =>
+        prev.map((l) => (l.id === data.listId ? { ...l, title: data.title } : l))
+      );
+    });
+
+    channel.bind("list:reordered", (data: { lists: { id: string; order: number }[]; actorId: string }) => {
+      if (data.actorId === userIdRef.current) return;
+      setLists((prev) => {
+        const orderMap = new Map(data.lists.map((l) => [l.id, l.order]));
+        return prev.map((l) => {
+          const newOrder = orderMap.get(l.id);
+          return newOrder !== undefined ? { ...l, order: newOrder } : l;
+        }).sort((a, b) => a.order - b.order);
+      });
+    });
+
+    return () => {
+      pusher.unsubscribe(`board-${boardId}`);
+    };
+  }, [boardId]);
 
   const activeType = activeId ? (lists.some((l) => l.id === activeId) ? "list" : "card") : null;
   const activeCard = activeType === "card" ? lists.flatMap((l) => l.cards).find((c) => c.id === activeId) : null;

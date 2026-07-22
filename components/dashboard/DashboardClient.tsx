@@ -33,11 +33,12 @@ interface DashboardClientProps {
   name: string;
   email: string;
   avatarUrl: string | null;
+  userId: string;
   initialWorkspaces: Workspace[];
   upNextSection?: React.ReactNode;
 }
 
-export default function DashboardClient({ name, email, avatarUrl, initialWorkspaces, upNextSection }: DashboardClientProps) {
+export default function DashboardClient({ name, email, avatarUrl, userId, initialWorkspaces, upNextSection }: DashboardClientProps) {
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWsId, setActiveWsId] = useState(initialWorkspaces[0]?.id ?? "");
@@ -122,7 +123,7 @@ export default function DashboardClient({ name, email, avatarUrl, initialWorkspa
           <ThemeToggle />
           
           {/* Notification dropdown */}
-          <NotificationCenter />
+          <NotificationCenter userId={userId} />
 
           <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1 shrink-0" />
 
