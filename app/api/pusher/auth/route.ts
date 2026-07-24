@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pusherServer } from "@/lib/pusher-server";
+import { getPusherServer } from "@/lib/pusher-server";
 import { getSession } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
@@ -23,6 +23,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const authResponse = pusherServer.authorizeChannel(socketId, channelName);
+  const authResponse = getPusherServer().authorizeChannel(socketId, channelName);
   return NextResponse.json(authResponse);
 }

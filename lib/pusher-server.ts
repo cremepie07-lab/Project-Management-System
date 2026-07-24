@@ -1,21 +1,27 @@
 import Pusher from "pusher";
 
-if (
-  !process.env.PUSHER_APP_ID ||
-  !process.env.PUSHER_KEY ||
-  !process.env.PUSHER_SECRET ||
-  !process.env.PUSHER_CLUSTER
-) {
-  throw new Error("Missing Pusher environment variables");
-}
+let _pusherServer: Pusher | undefined;
 
-export const pusherServer = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-  useTLS: true,
-});
+export function getPusherServer(): Pusher {
+  if (!_pusherServer) {
+    if (
+      !process.env.PUSHER_APP_ID ||
+      !process.env.PUSHER_KEY ||
+      !process.env.PUSHER_SECRET ||
+      !process.env.PUSHER_CLUSTER
+    ) {
+      throw new Error("Missing Pusher environment variables");
+    }
+    _pusherServer = new Pusher({
+      appId: process.env.PUSHER_APP_ID,
+      key: process.env.PUSHER_KEY,
+      secret: process.env.PUSHER_SECRET,
+      cluster: process.env.PUSHER_CLUSTER,
+      useTLS: true,
+    });
+  }
+  return _pusherServer;
+}
 
 /**
  * Trigger a board event to all clients subscribed to the board channel.
@@ -27,7 +33,7 @@ export async function triggerBoardEvent(
   data: Record<string, unknown>
 ) {
   try {
-    await pusherServer.trigger(`board-${boardId}`, eventName, data);
+    await getPusherServer().trigger(`board-${boardId}`, eventName, data);
   } catch (err) {
     console.error(`Pusher board event failed (${eventName}):`, err);
   }
@@ -42,7 +48,7 @@ export async function triggerUserNotification(
   notification: Record<string, unknown>
 ) {
   try {
-    await pusherServer.trigger(
+    await getPusherServer().trigger(
       `private-user-${userId}`,
       "notification:new",
       { notification }

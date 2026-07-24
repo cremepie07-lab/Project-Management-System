@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext, horizontalListSortingStrategy,
-  verticalListSortingStrategy, useSortable, arrayMove,
+  verticalListSortingStrategy, useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -529,7 +529,8 @@ export default function BoardClient({
     const toList = lists.find((l) => l.id === oId) ?? lists.find((l) => l.cards.some((c) => c.id === oId));
     if (!fromList || !toList || fromList.id === toList.id) return;
     setLists((prev) => {
-      const card = prev.find((l) => l.id === fromList.id)!.cards.find((c) => c.id === aId)!;
+      const card = prev.find((l) => l.id === fromList.id)!.cards.find((c) => c.id === aId);
+      if (!card) return prev;
       return prev.map((l) => {
         if (l.id === fromList.id) return { ...l, cards: l.cards.filter((c) => c.id !== aId) };
         if (l.id === toList.id) return { ...l, cards: [...l.cards, card] };
@@ -557,18 +558,36 @@ export default function BoardClient({
     }
 
     if (active.data.current?.type === "card") {
-      const toList = lists.find((l) => l.cards.some((c) => c.id === oId)) ?? lists.find((l) => l.id === oId);
-      if (!toList) return;
-      setLists((prev) => prev.map((l) => {
-        if (l.id !== toList.id) return l;
-        const oldIdx = l.cards.findIndex((c) => c.id === aId);
-        const newIdx = l.cards.findIndex((c) => c.id === oId);
-        if (oldIdx === -1 || newIdx === -1) return l;
-        const reordered = arrayMove(l.cards, oldIdx, newIdx);
-        const newOrder = calcNewPosition(reordered.filter((c) => c.id !== aId), newIdx);
+      setLists((prev) => {
+        let sourceListId: string | null = null;
+        let movedCard: Card | undefined;
+        for (const l of prev) {
+          const found = l.cards.find((c) => c.id === aId);
+          if (found) { movedCard = found; sourceListId = l.id; break; }
+        }
+        if (!movedCard || !sourceListId) return prev;
+
+        const toList = prev.find((l) => l.id === oId) ?? prev.find((l) => l.cards.some((c) => c.id === oId));
+        if (!toList) return prev;
+
+        const overCardIdx = toList.cards.findIndex((c) => c.id === oId);
+        const insertIdx = overCardIdx !== -1 ? overCardIdx : toList.cards.length;
+        const siblings = toList.cards.filter((c) => c.id !== aId);
+        const newOrder = calcNewPosition(siblings, insertIdx);
+
+        const next = prev.map((l) => {
+          if (l.id === sourceListId) return { ...l, cards: l.cards.filter((c) => c.id !== aId) };
+          if (l.id === toList.id) {
+            const updated = { ...movedCard!, order: newOrder };
+            const without = l.cards.filter((c) => c.id !== aId);
+            return { ...l, cards: [...without, updated].sort((a, b) => a.order - b.order) };
+          }
+          return l;
+        });
+
         updateCardOrder(aId, toList.id, newOrder);
-        return { ...l, cards: reordered.map((c) => c.id === aId ? { ...c, order: newOrder } : c) };
-      }));
+        return next;
+      });
     }
   }
 
