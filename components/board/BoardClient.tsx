@@ -319,6 +319,12 @@ export default function BoardClient({
   const [newCardTitle, setNewCardTitle] = useState("");
   const [selectedCard, setSelectedCard] = useState<{ card: Card; listId: string } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Tracks the card's ORIGINAL list at drag-start time; onDragOver mutates
+  // optimistic state before onDragEnd fires, so we can't rely on searching lists.
+  const dragSourceListIdRef = useRef<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
 
   const { filteredLists, filterLabels, filterMembers, toggleLabelFilter, toggleMemberFilter, clearFilters, isFiltering } =
     useCardFilter(lists);
@@ -519,7 +525,17 @@ export default function BoardClient({
     })));
   }
 
-  function onDragStart({ active }: DragStartEvent) { setActiveId(active.id as string); }
+  function onDragStart({ active }: DragStartEvent) {
+    setActiveId(active.id as string);
+    // Capture the card's current (real) list BEFORE any onDragOver optimistic updates
+    if (active.data.current?.type === "card") {
+      const cardId = active.id as string;
+      const sourceList = lists.find((l) => l.cards.some((c) => c.id === cardId));
+      dragSourceListIdRef.current = sourceList?.id ?? null;
+    } else {
+      dragSourceListIdRef.current = null;
+    }
+  }
 
   function onDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
@@ -541,10 +557,14 @@ export default function BoardClient({
 
   function onDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
-    if (!over || active.id === over.id) return;
+    if (!over) {
+      dragSourceListIdRef.current = null;
+      return;
+    }
     const aId = active.id as string, oId = over.id as string;
 
     if (active.data.current?.type === "list") {
+      if (aId === oId) return;
       setLists((prev) => {
         const sorted = [...prev].sort((a, b) => a.order - b.order);
         const fromIdx = sorted.findIndex((l) => l.id === aId);
@@ -555,39 +575,53 @@ export default function BoardClient({
         updateListOrder(aId, newOrder).then(() => { if (needsRebalance(updated)) rebalanceLists(boardId); });
         return updated;
       });
+      return;
     }
 
     if (active.data.current?.type === "card") {
-      setLists((prev) => {
-        let sourceListId: string | null = null;
-        let movedCard: Card | undefined;
-        for (const l of prev) {
-          const found = l.cards.find((c) => c.id === aId);
-          if (found) { movedCard = found; sourceListId = l.id; break; }
+      const sourceListId = dragSourceListIdRef.current;
+      dragSourceListIdRef.current = null;
+
+      let movedCard: Card | undefined;
+      let currentListId: string | null = null;
+      for (const l of lists) {
+        const found = l.cards.find((c) => c.id === aId);
+        if (found) {
+          movedCard = found;
+          currentListId = l.id;
+          break;
         }
-        if (!movedCard || !sourceListId) return prev;
+      }
+      if (!movedCard) return;
 
-        const toList = prev.find((l) => l.id === oId) ?? prev.find((l) => l.cards.some((c) => c.id === oId));
-        if (!toList) return prev;
+      const toList =
+        lists.find((l) => l.id === oId) ??
+        lists.find((l) => l.cards.some((c) => c.id === oId)) ??
+        lists.find((l) => l.id === currentListId);
 
-        const overCardIdx = toList.cards.findIndex((c) => c.id === oId);
-        const insertIdx = overCardIdx !== -1 ? overCardIdx : toList.cards.length;
-        const siblings = toList.cards.filter((c) => c.id !== aId);
-        const newOrder = calcNewPosition(siblings, insertIdx);
+      if (!toList) return;
 
-        const next = prev.map((l) => {
-          if (l.id === sourceListId) return { ...l, cards: l.cards.filter((c) => c.id !== aId) };
+      const overCardIdx = toList.cards.findIndex((c) => c.id === oId);
+      const insertIdx = (overCardIdx !== -1 && oId !== aId)
+        ? overCardIdx
+        : toList.cards.findIndex((c) => c.id === aId);
+      const siblings = toList.cards.filter((c) => c.id !== aId);
+      const targetIdx = insertIdx < 0 ? siblings.length : insertIdx;
+      const newOrder = calcNewPosition(siblings, targetIdx);
+
+      setLists((prev) =>
+        prev.map((l) => {
           if (l.id === toList.id) {
             const updated = { ...movedCard!, order: newOrder };
             const without = l.cards.filter((c) => c.id !== aId);
             return { ...l, cards: [...without, updated].sort((a, b) => a.order - b.order) };
           }
-          return l;
-        });
+          return { ...l, cards: l.cards.filter((c) => c.id !== aId) };
+        })
+      );
 
-        updateCardOrder(aId, toList.id, newOrder);
-        return next;
-      });
+      // ✅ Always call updateCardOrder to save in DB!
+      updateCardOrder(aId, toList.id, newOrder);
     }
   }
 
@@ -606,7 +640,7 @@ export default function BoardClient({
         {isFiltering && <span className="text-xs text-slate-500 dark:text-slate-400">Đang lọc — một số thẻ bị ẩn</span>}
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+      <DndContext id="board-dnd-context" sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
         autoScroll={{ threshold: { x: 40, y: 40 }, acceleration: 10 }}>
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
           <div className="flex gap-3.5 p-4 h-full items-start">

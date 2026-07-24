@@ -9,6 +9,8 @@ import DeleteBoardButton from "@/components/board/DeleteBoardButton";
 import { processRecurringCards } from "@/app/actions/recurring";
 import { checkAndCreateReminders } from "@/app/actions/reminder";
 
+export const dynamic = "force-dynamic";
+
 export default async function BoardPage({
   params,
 }: {

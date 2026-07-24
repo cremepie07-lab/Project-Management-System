@@ -3,6 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { triggerBoardEvent } from "@/lib/pusher-server";
+import { revalidatePath } from "next/cache";
+
+function revalidateBoard(boardId: string) {
+  revalidatePath(`/board/${boardId}`);
+}
 
 export async function getLists(boardId: string) {
   await requireSession();
@@ -30,6 +35,7 @@ export async function createList(boardId: string, title: string) {
     actorId: session.userId,
   });
 
+  revalidateBoard(boardId);
   return list;
 }
 
@@ -43,6 +49,7 @@ export async function updateListTitle(listId: string, title: string) {
     actorId: session.userId,
   });
 
+  revalidateBoard(list.boardId);
   return list;
 }
 
@@ -53,6 +60,7 @@ export async function deleteList(listId: string) {
   await prisma.list.delete({ where: { id: listId } });
 
   if (list) {
+    revalidateBoard(list.boardId);
     await triggerBoardEvent(list.boardId, "list:deleted", {
       listId,
       actorId: session.userId,
@@ -67,6 +75,7 @@ export async function updateListOrder(listId: string, order: number) {
   await prisma.list.update({ where: { id: listId }, data: { order } });
 
   if (list) {
+    revalidateBoard(list.boardId);
     await triggerBoardEvent(list.boardId, "list:moved", {
       listId,
       order,
@@ -92,4 +101,6 @@ export async function rebalanceLists(boardId: string) {
     lists: lists.map((l, i) => ({ id: l.id, order: (i + 1) * 1000 })),
     actorId: session.userId,
   });
+
+  revalidateBoard(boardId);
 }

@@ -6,6 +6,19 @@ import { logSystemActivity } from "@/app/actions/activity";
 import { formatDueDate } from "@/lib/due-date";
 import { Recurring } from "@prisma/client";
 import { triggerBoardEvent } from "@/lib/pusher-server";
+import { revalidatePath } from "next/cache";
+
+async function boardIdFromCardId(cardId: string): Promise<string | null> {
+  const card = await prisma.card.findUnique({
+    where: { id: cardId },
+    select: { list: { select: { boardId: true } } },
+  });
+  return card?.list.boardId ?? null;
+}
+
+function revalidateBoard(boardId: string) {
+  revalidatePath(`/board/${boardId}`);
+}
 
 export async function createCard(listId: string, title: string) {
   const session = await requireSession();
@@ -24,6 +37,7 @@ export async function createCard(listId: string, title: string) {
       listId,
       actorId: session.userId,
     });
+    revalidateBoard(list.boardId);
   }
 
   return card;
@@ -46,6 +60,7 @@ export async function updateCard(
   }
 ) {
   const session = await requireSession();
+  const boardId = await boardIdFromCardId(cardId);
 
   if (data.dueDate !== undefined || data.startDate !== undefined) {
     const updated = await prisma.card.update({ where: { id: cardId }, data });
@@ -56,10 +71,13 @@ export async function updateCard(
         ? `đã đặt hạn hoàn thành: ${formatDueDate(data.dueDate)}`
         : `đã xóa hạn hoàn thành`
     );
+    if (boardId) revalidateBoard(boardId);
     return updated;
   }
 
-  return prisma.card.update({ where: { id: cardId }, data });
+  const updated = await prisma.card.update({ where: { id: cardId }, data });
+  if (boardId) revalidateBoard(boardId);
+  return updated;
 }
 
 export async function deleteCard(cardId: string) {
@@ -73,6 +91,7 @@ export async function deleteCard(cardId: string) {
   await prisma.card.delete({ where: { id: cardId } });
 
   if (boardId) {
+    revalidateBoard(boardId);
     await triggerBoardEvent(boardId, "card:deleted", {
       cardId,
       actorId: session.userId,
@@ -82,6 +101,7 @@ export async function deleteCard(cardId: string) {
 
 export async function updateCardOrder(cardId: string, newListId: string, order: number) {
   const session = await requireSession();
+  console.log(`[updateCardOrder] cardId=${cardId} newListId=${newListId} order=${order}`);
 
   const current = await prisma.card.findUnique({ where: { id: cardId }, select: { listId: true } });
   const movedToNewList = !!current && current.listId !== newListId;
@@ -98,17 +118,7 @@ export async function updateCardOrder(cardId: string, newListId: string, order: 
     }
   }
 
-  const newBoard = await prisma.list.findUnique({ where: { id: newListId }, select: { boardId: true } });
-  if (newBoard) {
-    await triggerBoardEvent(newBoard.boardId, "card:moved", {
-      cardId,
-      toListId: newListId,
-      fromListId: current?.listId ?? newListId,
-      order,
-      actorId: session.userId,
-    });
-  }
-
+  // Rebalance siblings in the destination list BEFORE revalidating cache
   const siblings = await prisma.card.findMany({
     where: { listId: newListId },
     orderBy: { order: "asc" },
@@ -125,6 +135,19 @@ export async function updateCardOrder(cardId: string, newListId: string, order: 
         prisma.card.update({ where: { id: c.id }, data: { order: (i + 1) * 1000 } })
       )
     );
+  }
+
+  // Trigger Pusher + revalidate AFTER DB is fully consistent
+  const newBoard = await prisma.list.findUnique({ where: { id: newListId }, select: { boardId: true } });
+  if (newBoard) {
+    await triggerBoardEvent(newBoard.boardId, "card:moved", {
+      cardId,
+      toListId: newListId,
+      fromListId: current?.listId ?? newListId,
+      order,
+      actorId: session.userId,
+    });
+    revalidateBoard(newBoard.boardId);
   }
 }
 
@@ -148,6 +171,7 @@ export async function markCardComplete(cardId: string) {
       card: { id: updated.id, isCompleted: updated.isCompleted, completedAt: updated.completedAt, completedBy: updated.completedBy },
       actorId: session.userId,
     });
+    revalidateBoard(card.list.boardId);
   }
 
   return updated;
@@ -173,6 +197,7 @@ export async function undoCardComplete(cardId: string) {
       card: { id: updated.id, isCompleted: updated.isCompleted, completedAt: null, completedBy: null },
       actorId: session.userId,
     });
+    revalidateBoard(card.list.boardId);
   }
 
   return updated;
@@ -211,6 +236,9 @@ export async function saveCardDateSettings(
       ? `đã cập nhật ngày bắt đầu/hạn hoàn thành: ${formatDueDate(data.dueDate)}`
       : "đã xóa ngày bắt đầu và hạn hoàn thành"
   );
+
+  const boardId = await boardIdFromCardId(cardId);
+  if (boardId) revalidateBoard(boardId);
   return card;
 }
 
@@ -227,5 +255,8 @@ export async function removeCardDateSettings(cardId: string) {
     },
   });
   await logSystemActivity(cardId, session.userId, "đã xóa ngày bắt đầu và hạn hoàn thành");
+
+  const boardId = await boardIdFromCardId(cardId);
+  if (boardId) revalidateBoard(boardId);
   return card;
 }
